@@ -12,8 +12,8 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
 		<mule.version>3.5.0-cascade</mule.version>
+		<sfdc.version>5.4.3</sfdc.version>
 		<eclipsePluginVersion>2.8</eclipsePluginVersion>
 		<jdkName>JavaSE-1.6</jdkName>
 		<jdk.version>1.6</jdk.version>
@@ -52,7 +52,7 @@
 										</goals>
 									</pluginExecutionFilter>
 									<action>
-										<ignore></ignore>
+										<ignore />
 									</action>
 								</pluginExecution>
 							</pluginExecutions>
@@ -75,22 +75,11 @@
 					</execution>
 				</executions>
 				<configuration>
+					<useFile>false</useFile>
 					<additionalClasspathElements>
 						<additionalClasspathElement>${MULE_HOME}/conf/</additionalClasspathElement>
 						<!-- Location of the mule licence in Bamboo muleLicenseKey.lic -->
-						<additionalClasspathElement>/home/j2ee-bamboo/license/</additionalClasspathElement>
-					</additionalClasspathElements>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.14.1</version>
-				<configuration>
-					<additionalClasspathElements>
-						<additionalClasspathElement>${MULE_HOME}/conf/</additionalClasspathElement>
-						<!-- Location of the mule licence in Bamboo muleLicenseKey.lic -->
-						<additionalClasspathElement>/home/j2ee-bamboo/license/</additionalClasspathElement>
+						<additionalClasspathElement>/home/j2ee-bamboo/license</additionalClasspathElement>
 					</additionalClasspathElements>
 				</configuration>
 			</plugin>
@@ -101,6 +90,12 @@
 				<extensions>true</extensions>
 				<configuration>
 					<copyToAppsDirectory>true</copyToAppsDirectory>
+					<inclusions>
+						<inclusion>
+							<groupId>org.mule.modules</groupId>
+							<artifactId>mule-module-sfdc</artifactId>
+						</inclusion>
+					</inclusions>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -213,9 +208,8 @@
 						<configuration>
 							<tasks>
 								<!-- Using an ant task to deflate cloveretl-engine.zip -->
-								<unzip
-									src="${project.build.testOutputDirectory}/cloveretl-engine.zip"
-									dest="${project.build.testOutputDirectory}" />
+								<unzip dest="${project.build.testOutputDirectory}"
+									src="${project.build.testOutputDirectory}/cloveretl-engine.zip" />
 							</tasks>
 						</configuration>
 						<goals>
@@ -224,20 +218,8 @@
 					</execution>
 				</executions>
 			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-release-plugin</artifactId>
-				<version>2.3.2</version>
-			</plugin>
 		</plugins>
 	</build>
-
-
-	<scm>
-		<connection>scm:git:https://github.com/mulesoft/sfdc2sfdc-accounts-onewaysync.git</connection>
-		<developerConnection>scm:git:https://github.com/mulesoft/sfdc2sfdc-accounts-onewaysync.git</developerConnection>
-		<url>http://github.com/mulesoft/sfdc2sfdc-accounts-onewaysync</url>
-	</scm>
 
 	<!-- plugins for creating site reports -->
 	<reporting>
@@ -423,11 +405,13 @@
 			<version>${mule.version}</version>
 			<scope>provided</scope>
 		</dependency>
-
-		<!-- Connectors -->
-
-
 		<!-- for testing -->
+		<dependency>
+			<groupId>org.mule.modules</groupId>
+			<artifactId>mule-module-devkit-support</artifactId>
+			<version>${mule.version}</version>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.mule.tests</groupId>
 			<artifactId>mule-tests-functional</artifactId>
@@ -451,6 +435,11 @@
 			<artifactId>cloveretl-engine</artifactId>
 			<version>${mule.version}</version>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mule.modules</groupId>
+			<artifactId>mule-module-sfdc</artifactId>
+			<version>${sfdc.version}</version>
 		</dependency>
 	</dependencies>
 

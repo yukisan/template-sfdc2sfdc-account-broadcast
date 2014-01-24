@@ -30,7 +30,7 @@ This flow should control the direction of the application, and it should be call
       		} else { 
         			payload.put('Id',flowVars['idInB'].get('Id'))}]]> 
   			</expression-component>
-            <expression-component doc:name="remove LastReferencedDate for upsert"><![CDATA[payload.remove('LastReferencedDate')]]> 
+            <expression-component doc:name="remove LastModifiedDate for upsert"><![CDATA[payload.remove('LastModifiedDate')]]> 
   			</expression-component>
   			<expression-component doc:name="changing type of field NumberOfEmployees to int"><![CDATA[ if (payload.get('NumberOfEmployees') == null) { payload.remove('NumberOfEmployees') 
                 } else {

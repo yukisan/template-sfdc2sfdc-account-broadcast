@@ -1,21 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.4.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" 
+xmlns="http://www.mulesoft.org/schema/mule/core" 
+xmlns:sfdc="http://www.mulesoft.org/schema/mule/sfdc"
+xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" 
+xmlns:spring="http://www.springframework.org/schema/beans" 
+version="EE-3.5.0" 
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
-http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/sfdc http://www.mulesoft.org/schema/mule/sfdc/current/mule-sfdc.xsd">
 
 	<!-- 	In this file you should declare all your inbound endpoints and from here controll the access to your application -->
 
-	<flow name="triggerFlow" processingStrategy="synchronous" doc:name="triggerFlow" doc:description="This is the simpliest entry point to start the excecution of your Kick
-Here you should:
-	* Define any inbound endpoint
-	* Handle any input parameter and transform it into the expected format by the mainFlow
-Here you should not:
+    <flow name="triggerFlow" processingStrategy="synchronous"  doc:name="triggerFlow" doc:description="This is the simpliest entry point to start the excecution of your Kick
+Here you should: 
+	* Configure the inbound endpoint, in this case a polling to fetch data from origin system
+	* Handle any input parameter and set the scope of it so the main logic does not care from where it is called
+Here you should not: 
 	* Run validations against external systems
-	* Choose flow of your application based on input parameters">
-        <http:inbound-endpoint exchange-pattern="request-response" host="localhost" port="${http.port}" path="" doc:name="Start Synchronization"/>
-        
-        <flow-ref name="mainFlow" doc:description="mainFlow"  doc:name="mainFlow"/>
-    
+	* Choose flow of you application based on input parameters">
+    	<poll doc:name="Poll">
+            <fixed-frequency-scheduler frequency="${polling.frequency}" />
+            <watermark variable="lastQueryDate" default-expression="${watermark.default.expression}" selector="MAX" selector-expression="#[payload.LastReferencedDate]"/>
+             <sfdc:query-all config-ref="SalesforceA" doc:name="Fetch Accounts with filtering criteria" query="SELECT AccountNumber, AccountSource, AnnualRevenue, BillingCity, BillingCountry, BillingPostalCode, BillingState, BillingStreet, Description, Fax, Industry, LastReferencedDate, Name, NumberOfEmployees, OwnerId, Ownership, ParentId, Phone, Rating, RecordTypeId, ShippingCity, ShippingCountry, ShippingPostalCode, ShippingState, ShippingStreet, Sic, SicDesc, Site, TickerSymbol, Type, Website FROM Account WHERE NumberOfEmployees &gt; 5000 AND Industry IN ('Education','Government')">
+            </sfdc:query-all>
+        </poll>
+        <logger message="#[payload]" level="INFO" doc:name="Log created/updated Accounts"/>
+        <flow-ref name="mainFlow" doc:name="call mainFlow"/>
     </flow>
+    
 </mule>

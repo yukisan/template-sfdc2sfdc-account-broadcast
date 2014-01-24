@@ -90,13 +90,13 @@ In the visual editor they can be found on the *Global Element* tab.
 This flows consists mainly on the logic to bring created and updated Accounts from SFDC Instance A:
 + SFDC Query with filters applied to bring only Accounts with an employee number greater than 5000 and Industry being either "Government" or "Education", as a way to show how to filter.
 + Polling configured to execute the query every certain period of time.
-+ Query will bring results since last integration run in oder to have only **new** updated or creations. This is done by using Mule Watermarking feature: watermark will be used in SFDC query and updated everytime the integration runs without exceptions. The actual watermark is the greatest LastReferencedDate of the Accounts brought in the query done. This can be addapted to different needs and there is an [interesting blog about this feature.](http://blogs.mulesoft.org/data-synchronizing-made-easy-with-mule-watermarks/)
++ Query will bring results since last integration run in oder to have only **new** updated or creations. This is done by using Mule Watermarking feature: watermark will be used in SFDC query and updated everytime the integration runs without exceptions. The actual watermark is the greatest LastModifiedDate of the Accounts brought in the query done. This can be addapted to different needs and there is an [interesting blog about this feature.](http://blogs.mulesoft.org/data-synchronizing-made-easy-with-mule-watermarks/)
 + Default watermark expression is configured here as well.
 
 ## businessLogic.xml<a name="businesslogicxml"/>
 Creation/update of Accounts is managed on this file. For all the records received on the inbound stage, two high level steps (flows) do the work here:
 
-+ **processDataFlow:** For each Account received the integration check if it does not exists on target system or if it does to add the foreign Id (Query to SFDC Target instance). After this, LastReferencedDate value is removed and NumberOfEmployees set to type **int** to accomplish SFDC API restrictions. After this is added to a List that contains all Accounts to be synced.
++ **processDataFlow:** For each Account received the integration check if it does not exists on target system or if it does to add the foreign Id (Query to SFDC Target instance). After this, LastModifiedDate value is removed and NumberOfEmployees set to type **int** to accomplish SFDC API restrictions. After this is added to a List that contains all Accounts to be synced.
 
 + **outboundFlow:** Once all the records have been processed, the list where they were being gathered is set as payload and they are migrated to the target instance using Upsert method of SFDC Connector.
 

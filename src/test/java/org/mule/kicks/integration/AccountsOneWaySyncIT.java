@@ -39,8 +39,6 @@ public class AccountsOneWaySyncIT extends AbstractKickTestCase {
 
 	@BeforeClass
 	public static void beforeClass() {
-		System.setProperty("mule.env", "test");
-
 		// Setting Default Watermark Expression to query SFDC with LastModifiedDate greater than ten seconds before current time
 		System.setProperty("watermark.default.expression", "#[groovy: new Date(System.currentTimeMillis() - 10000).format(\"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'\", TimeZone.getTimeZone('UTC'))]");
 

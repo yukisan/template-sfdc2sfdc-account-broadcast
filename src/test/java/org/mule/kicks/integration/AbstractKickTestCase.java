@@ -94,7 +94,7 @@ public class AbstractKickTestCase extends FunctionalTestCase {
 																		.lookupObject(flowName);
 	}
 
-	protected void startFlowSchedulers(String flowName) throws Exception {
+	protected void runSchedulersOnce(String flowName) throws Exception {
 		final Collection<Scheduler> schedulers = muleContext.getRegistry()
 															.lookupScheduler(Schedulers.flowPollingSchedulers(flowName));
 

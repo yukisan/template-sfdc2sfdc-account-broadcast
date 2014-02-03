@@ -42,7 +42,6 @@ public class AccountsOneWaySyncIT extends AbstractKickTestCase {
 	@Before
 	@SuppressWarnings("unchecked")
 	public void setUp() throws Exception {
-		stopFlowSchedulers(POLL_FLOW_NAME);
 
 		// Flow to retrieve accounts from target system after syncing
 		checkAccountflow = getSubFlow("retrieveAccountFlow");
@@ -135,7 +134,7 @@ public class AccountsOneWaySyncIT extends AbstractKickTestCase {
 	public void testMainFlow() throws Exception {
 		System.out.println("About to run poll");
 
-		startFlowSchedulers(POLL_FLOW_NAME);
+		runSchedulersOnce(POLL_FLOW_NAME);
 
 		System.out.println("Poll runned");
 

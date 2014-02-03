@@ -19,8 +19,6 @@ import org.mule.api.MuleException;
 import org.mule.api.schedule.Scheduler;
 import org.mule.api.schedule.Schedulers;
 import org.mule.processor.chain.SubflowInterceptingChainLifecycleWrapper;
-import org.mule.tck.probe.PollingProber;
-import org.mule.tck.probe.Prober;
 import org.mule.transport.NullPayload;
 
 import com.sforce.soap.partner.SaveResult;
@@ -32,10 +30,10 @@ import com.sforce.soap.partner.SaveResult;
  */
 public class AccountsOneWaySyncIT extends AbstractKickTestCase {
 
-	private static SubflowInterceptingChainLifecycleWrapper checkAccountflow;
-	private static List<Map<String, Object>> createdAccountInA = new ArrayList<Map<String, Object>>();
+	private static final String POLL_FLOW_NAME = "triggerFlow";
 
-	private final Prober workingPollProber = new PollingProber(360000, 2000);
+	private static SubflowInterceptingChainLifecycleWrapper checkAccountflow;
+	private static List<Map<String, Object>> createdAccountsInA = new ArrayList<Map<String, Object>>();
 
 	@BeforeClass
 	public static void beforeClass() {
@@ -49,14 +47,15 @@ public class AccountsOneWaySyncIT extends AbstractKickTestCase {
 	@Before
 	@SuppressWarnings("unchecked")
 	public void setUp() throws Exception {
+		stopSchedulers(POLL_FLOW_NAME);
 
 		// Flow to retrieve accounts from target system after syncing
 		checkAccountflow = getSubFlow("retrieveAccountFlow");
 		checkAccountflow.initialise();
 
 		// Create object in target system to be updated
-		final SubflowInterceptingChainLifecycleWrapper flowB = getSubFlow("createAccountFlowB");
-		flowB.initialise();
+		final SubflowInterceptingChainLifecycleWrapper createAccountInBFlow = getSubFlow("createAccountFlowB");
+		createAccountInBFlow.initialise();
 
 		final List<Map<String, Object>> createdAccountInB = new ArrayList<Map<String, Object>>();
 		// This account should BE synced (updated) as the industry is Education, has more than 5000 Employees and the record exists in the target system
@@ -65,58 +64,60 @@ public class AccountsOneWaySyncIT extends AbstractKickTestCase {
 											.withProperty("NumberOfEmployees", 17000)
 											.build());
 
-		flowB.process(getTestEvent(createdAccountInB, MessageExchangePattern.REQUEST_RESPONSE));
+		createAccountInBFlow.process(getTestEvent(createdAccountInB, MessageExchangePattern.REQUEST_RESPONSE));
 
 		// Create accounts in source system to be or not to be synced
-		final SubflowInterceptingChainLifecycleWrapper flow = getSubFlow("createAccountFlowA");
-		flow.initialise();
+		final SubflowInterceptingChainLifecycleWrapper createAccountInAFlow = getSubFlow("createAccountFlowA");
+		createAccountInAFlow.initialise();
 
 		// This account should not be synced as the industry is not "Education" or "Government"
-		createdAccountInA.add(anAccount().withProperty("Name", buildUniqueName("DemoFilterIndustryAccount"))
+		createdAccountsInA.add(anAccount().withProperty("Name", buildUniqueName("DemoFilterIndustryAccount"))
 											.withProperty("Industry", "Insurance")
 											.withProperty("NumberOfEmployees", 17000)
 											.build());
 
 		// This account should not be synced as the number of employees is less than 5000
-		createdAccountInA.add(anAccount().withProperty("Name", buildUniqueName("DemoFilterIndustryAccount"))
+		createdAccountsInA.add(anAccount().withProperty("Name", buildUniqueName("DemoFilterIndustryAccount"))
 											.withProperty("Industry", "Government")
 											.withProperty("NumberOfEmployees", 2500)
 											.build());
 
 		// This account should BE synced (inserted) as the number of employees if greater than 5000 and the industry is "Government"
-		createdAccountInA.add(anAccount().withProperty("Name", buildUniqueName("DemoCreateAccount"))
+		createdAccountsInA.add(anAccount().withProperty("Name", buildUniqueName("DemoCreateAccount"))
 											.withProperty("Industry", "Government")
 											.withProperty("NumberOfEmployees", 18000)
 											.build());
 
 		// This account should BE synced (updated) as the number of employees if greater than 5000 and the industry is "Education"
-		createdAccountInA.add(anAccount().withProperty("Name", buildUniqueName("DemoUpdateAccount"))
+		createdAccountsInA.add(anAccount().withProperty("Name", buildUniqueName("DemoUpdateAccount"))
 											.withProperty("Industry", "Education")
 											.withProperty("NumberOfEmployees", 12000)
 											.build());
 
-		final MuleEvent event = flow.process(getTestEvent(createdAccountInA, MessageExchangePattern.REQUEST_RESPONSE));
+		final MuleEvent event = createAccountInAFlow.process(getTestEvent(createdAccountsInA, MessageExchangePattern.REQUEST_RESPONSE));
 		final List<SaveResult> results = (List<SaveResult>) event.getMessage()
 																	.getPayload();
 		System.out.println("Results from creation in A" + results.toString());
-		for (int i = 0; i < results.size(); i++) {
-			createdAccountInA.get(i)
-								.put("Id", results.get(i)
-													.getId());
+		int i = 0;
+		for (SaveResult result : results) {
+			Map<String, Object> accountInA = createdAccountsInA.get(i);
+			accountInA.put("Id", result.getId());
+			i++;
 		}
-		System.out.println("Results after adding" + createdAccountInA.toString());
+
+		System.out.println("Results after adding" + createdAccountsInA.toString());
 	}
 
 	@After
 	public void tearDown() throws Exception {
-		stopSchedulers();
+		stopSchedulers(POLL_FLOW_NAME);
 
 		// Delete the created accounts in A
 		SubflowInterceptingChainLifecycleWrapper flow = getSubFlow("deleteAccountFromAFlow");
 		flow.initialise();
 
 		final List<Object> idList = new ArrayList<Object>();
-		for (final Map<String, Object> c : createdAccountInA) {
+		for (final Map<String, Object> c : createdAccountsInA) {
 			idList.add(c.get("Id"));
 		}
 		flow.process(getTestEvent(idList, MessageExchangePattern.REQUEST_RESPONSE));
@@ -126,8 +127,8 @@ public class AccountsOneWaySyncIT extends AbstractKickTestCase {
 		flow.initialise();
 
 		idList.clear();
-		for (final Map<String, Object> c : createdAccountInA) {
-			final Map<String, Object> account = invokeRetrieveAccountFlow(checkAccountflow, c);
+		for (final Map<String, Object> createdAccount : createdAccountsInA) {
+			final Map<String, Object> account = invokeRetrieveAccountFlow(checkAccountflow, createdAccount);
 			if (account != null) {
 				idList.add(account.get("Id"));
 			}
@@ -137,36 +138,28 @@ public class AccountsOneWaySyncIT extends AbstractKickTestCase {
 
 	@Test
 	public void testMainFlow() throws Exception {
-		workingPollProber.check(new AssertionProbe() {
-			@Override
-			public void assertSatisfied() throws Exception {
-				// Assert first object was not synced
-				assertEquals("The account should not have been sync", null, invokeRetrieveAccountFlow(checkAccountflow, createdAccountInA.get(0)));
+		System.out.println("About to run poll");
 
-				// Assert second object was not synced
-				assertEquals("The account should not have been sync", null, invokeRetrieveAccountFlow(checkAccountflow, createdAccountInA.get(1)));
+		startSchedulers(POLL_FLOW_NAME);
 
-				// Assert third object was created in target system
-				Map<String, Object> payload = invokeRetrieveAccountFlow(checkAccountflow, createdAccountInA.get(2));
-				assertEquals("The account should have been sync", createdAccountInA.get(2)
-																					.get("Name"), payload.get("Name"));
+		System.out.println("Poll runned");
 
-				// Assert fourth object was updated in target system
-				final Map<String, Object> fourthAccount = createdAccountInA.get(3);
-				payload = invokeRetrieveAccountFlow(checkAccountflow, fourthAccount);
-				assertEquals("The account should have been sync (Name)", fourthAccount.get("Name"), payload.get("Name"));
+		// Assert first object was not synced
+		assertEquals("The account should not have been sync", null, invokeRetrieveAccountFlow(checkAccountflow, createdAccountsInA.get(0)));
 
-			}
-		});
-	}
+		// Assert second object was not synced
+		assertEquals("The account should not have been sync", null, invokeRetrieveAccountFlow(checkAccountflow, createdAccountsInA.get(1)));
 
-	private void stopSchedulers() throws MuleException {
-		final Collection<Scheduler> schedulers = muleContext.getRegistry()
-															.lookupScheduler(Schedulers.flowPollingSchedulers("businessLogicFlow"));
+		// Assert third object was created in target system
+		Map<String, Object> payload = invokeRetrieveAccountFlow(checkAccountflow, createdAccountsInA.get(2));
+		assertEquals("The account should have been sync", createdAccountsInA.get(2)
+																			.get("Name"), payload.get("Name"));
 
-		for (final Scheduler scheduler : schedulers) {
-			scheduler.stop();
-		}
+		// Assert fourth object was updated in target system
+		final Map<String, Object> fourthAccount = createdAccountsInA.get(3);
+		payload = invokeRetrieveAccountFlow(checkAccountflow, fourthAccount);
+		assertEquals("The account should have been sync (Name)", fourthAccount.get("Name"), payload.get("Name"));
+
 	}
 
 	@SuppressWarnings("unchecked")
@@ -174,7 +167,6 @@ public class AccountsOneWaySyncIT extends AbstractKickTestCase {
 		final Map<String, Object> accountMap = new HashMap<String, Object>();
 
 		accountMap.put("Name", account.get("Name"));
-		flow.initialise();
 		final MuleEvent event = flow.process(getTestEvent(accountMap, MessageExchangePattern.REQUEST_RESPONSE));
 		final Object payload = event.getMessage()
 									.getPayload();
@@ -183,6 +175,24 @@ public class AccountsOneWaySyncIT extends AbstractKickTestCase {
 			return null;
 		} else {
 			return (Map<String, Object>) payload;
+		}
+	}
+
+	private void startSchedulers(String flowName) throws Exception {
+		final Collection<Scheduler> schedulers = muleContext.getRegistry()
+															.lookupScheduler(Schedulers.flowPollingSchedulers(flowName));
+
+		for (final Scheduler scheduler : schedulers) {
+			scheduler.schedule();
+		}
+	}
+
+	private void stopSchedulers(String flowName) throws MuleException {
+		final Collection<Scheduler> schedulers = muleContext.getRegistry()
+															.lookupScheduler(Schedulers.flowPollingSchedulers(flowName));
+
+		for (final Scheduler scheduler : schedulers) {
+			scheduler.stop();
 		}
 	}
 

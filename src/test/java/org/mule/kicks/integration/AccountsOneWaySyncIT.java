@@ -3,8 +3,6 @@ package org.mule.kicks.integration;
 import static junit.framework.Assert.assertEquals;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,9 +13,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mule.MessageExchangePattern;
 import org.mule.api.MuleEvent;
-import org.mule.api.MuleException;
-import org.mule.api.schedule.Scheduler;
-import org.mule.api.schedule.Schedulers;
 import org.mule.processor.chain.SubflowInterceptingChainLifecycleWrapper;
 import org.mule.transport.NullPayload;
 
@@ -29,7 +24,7 @@ import com.sforce.soap.partner.SaveResult;
  * @author miguel.oliva
  */
 public class AccountsOneWaySyncIT extends AbstractKickTestCase {
-
+	private static final String KICK_NAME = "accountsonewaysync";
 	private static final String POLL_FLOW_NAME = "triggerFlow";
 
 	private static SubflowInterceptingChainLifecycleWrapper checkAccountflow;
@@ -47,7 +42,7 @@ public class AccountsOneWaySyncIT extends AbstractKickTestCase {
 	@Before
 	@SuppressWarnings("unchecked")
 	public void setUp() throws Exception {
-		stopSchedulers(POLL_FLOW_NAME);
+		stopFlowSchedulers(POLL_FLOW_NAME);
 
 		// Flow to retrieve accounts from target system after syncing
 		checkAccountflow = getSubFlow("retrieveAccountFlow");
@@ -59,7 +54,7 @@ public class AccountsOneWaySyncIT extends AbstractKickTestCase {
 
 		final List<Map<String, Object>> createdAccountInB = new ArrayList<Map<String, Object>>();
 		// This account should BE synced (updated) as the industry is Education, has more than 5000 Employees and the record exists in the target system
-		createdAccountInB.add(anAccount().withProperty("Name", buildUniqueName("DemoUpdateAccount"))
+		createdAccountInB.add(anAccount().withProperty("Name", buildUniqueName(KICK_NAME, "DemoUpdateAccount"))
 											.withProperty("Industry", "Education")
 											.withProperty("NumberOfEmployees", 17000)
 											.build());
@@ -71,25 +66,25 @@ public class AccountsOneWaySyncIT extends AbstractKickTestCase {
 		createAccountInAFlow.initialise();
 
 		// This account should not be synced as the industry is not "Education" or "Government"
-		createdAccountsInA.add(anAccount().withProperty("Name", buildUniqueName("DemoFilterIndustryAccount"))
+		createdAccountsInA.add(anAccount().withProperty("Name", buildUniqueName(KICK_NAME, "DemoFilterIndustryAccount"))
 											.withProperty("Industry", "Insurance")
 											.withProperty("NumberOfEmployees", 17000)
 											.build());
 
 		// This account should not be synced as the number of employees is less than 5000
-		createdAccountsInA.add(anAccount().withProperty("Name", buildUniqueName("DemoFilterIndustryAccount"))
+		createdAccountsInA.add(anAccount().withProperty("Name", buildUniqueName(KICK_NAME, "DemoFilterIndustryAccount"))
 											.withProperty("Industry", "Government")
 											.withProperty("NumberOfEmployees", 2500)
 											.build());
 
 		// This account should BE synced (inserted) as the number of employees if greater than 5000 and the industry is "Government"
-		createdAccountsInA.add(anAccount().withProperty("Name", buildUniqueName("DemoCreateAccount"))
+		createdAccountsInA.add(anAccount().withProperty("Name", buildUniqueName(KICK_NAME, "DemoCreateAccount"))
 											.withProperty("Industry", "Government")
 											.withProperty("NumberOfEmployees", 18000)
 											.build());
 
 		// This account should BE synced (updated) as the number of employees if greater than 5000 and the industry is "Education"
-		createdAccountsInA.add(anAccount().withProperty("Name", buildUniqueName("DemoUpdateAccount"))
+		createdAccountsInA.add(anAccount().withProperty("Name", buildUniqueName(KICK_NAME, "DemoUpdateAccount"))
 											.withProperty("Industry", "Education")
 											.withProperty("NumberOfEmployees", 12000)
 											.build());
@@ -110,7 +105,7 @@ public class AccountsOneWaySyncIT extends AbstractKickTestCase {
 
 	@After
 	public void tearDown() throws Exception {
-		stopSchedulers(POLL_FLOW_NAME);
+		stopFlowSchedulers(POLL_FLOW_NAME);
 
 		// Delete the created accounts in A
 		SubflowInterceptingChainLifecycleWrapper flow = getSubFlow("deleteAccountFromAFlow");
@@ -140,7 +135,7 @@ public class AccountsOneWaySyncIT extends AbstractKickTestCase {
 	public void testMainFlow() throws Exception {
 		System.out.println("About to run poll");
 
-		startSchedulers(POLL_FLOW_NAME);
+		startFlowSchedulers(POLL_FLOW_NAME);
 
 		System.out.println("Poll runned");
 
@@ -178,40 +173,9 @@ public class AccountsOneWaySyncIT extends AbstractKickTestCase {
 		}
 	}
 
-	private void startSchedulers(String flowName) throws Exception {
-		final Collection<Scheduler> schedulers = muleContext.getRegistry()
-															.lookupScheduler(Schedulers.flowPollingSchedulers(flowName));
-
-		for (final Scheduler scheduler : schedulers) {
-			scheduler.schedule();
-		}
-	}
-
-	private void stopSchedulers(String flowName) throws MuleException {
-		final Collection<Scheduler> schedulers = muleContext.getRegistry()
-															.lookupScheduler(Schedulers.flowPollingSchedulers(flowName));
-
-		for (final Scheduler scheduler : schedulers) {
-			scheduler.stop();
-		}
-	}
-
 	// ***************************************************************
 	// ======== AccountBuilder class ========
 	// ***************************************************************
-	private String buildUniqueName(String name) {
-		String kickName = "accountsonewaysync";
-		String timeStamp = new Long(new Date().getTime()).toString();
-
-		StringBuilder builder = new StringBuilder();
-		builder.append(name);
-		builder.append(kickName);
-		builder.append(timeStamp);
-
-		return builder.toString();
-
-	}
-
 	private AccountBuilder anAccount() {
 		return new AccountBuilder();
 	}

@@ -15,6 +15,7 @@ import org.mule.api.schedule.Schedulers;
 import org.mule.construct.Flow;
 import org.mule.processor.chain.SubflowInterceptingChainLifecycleWrapper;
 import org.mule.tck.junit4.FunctionalTestCase;
+import org.mule.transport.polling.schedule.FixedFrequencyScheduler;
 
 /**
  * This is the base test class for Kicks integration tests.
@@ -106,7 +107,6 @@ public class AbstractKickTestCase extends FunctionalTestCase {
 	protected void stopFlowSchedulers(String flowName) throws MuleException {
 		final Collection<Scheduler> schedulers = muleContext.getRegistry()
 															.lookupScheduler(Schedulers.flowPollingSchedulers(flowName));
-
 		for (final Scheduler scheduler : schedulers) {
 			scheduler.stop();
 		}

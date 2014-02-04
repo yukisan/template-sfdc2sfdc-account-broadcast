@@ -1,6 +1,6 @@
 package org.mule.kicks.integration;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,7 +13,13 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mule.MessageExchangePattern;
 import org.mule.api.MuleEvent;
+import org.mule.api.MuleException;
+import org.mule.context.notification.NotificationException;
+import org.mule.kicks.test.utils.ListenerProbe;
+import org.mule.kicks.test.utils.PipelineSynchronizeListener;
 import org.mule.processor.chain.SubflowInterceptingChainLifecycleWrapper;
+import org.mule.tck.probe.PollingProber;
+import org.mule.tck.probe.Prober;
 import org.mule.transport.NullPayload;
 
 import com.sforce.soap.partner.SaveResult;
@@ -24,11 +30,15 @@ import com.sforce.soap.partner.SaveResult;
  * @author miguel.oliva
  */
 public class AccountsOneWaySyncIT extends AbstractKickTestCase {
-	private static final String KICK_NAME = "accountsonewaysync";
 	private static final String POLL_FLOW_NAME = "triggerFlow";
+	private static final String KICK_NAME = "accountsonewaysync";
 
 	private static SubflowInterceptingChainLifecycleWrapper checkAccountflow;
 	private static List<Map<String, Object>> createdAccountsInA = new ArrayList<Map<String, Object>>();
+
+	private final Prober workingPollProber = new PollingProber(10000, 1000l);
+
+	private final PipelineSynchronizeListener pipelineListener = new PipelineSynchronizeListener(POLL_FLOW_NAME);
 
 	@BeforeClass
 	public static void beforeClass() {
@@ -37,27 +47,94 @@ public class AccountsOneWaySyncIT extends AbstractKickTestCase {
 
 		// Setting Polling Frecuency to 10 seconds period
 		System.setProperty("polling.frequency", "10000");
+
 	}
 
 	@Before
-	@SuppressWarnings("unchecked")
 	public void setUp() throws Exception {
+		stopFlowSchedulers(POLL_FLOW_NAME);
+		registerListeners();
+		waitForPollToRun();
 
 		// Flow to retrieve accounts from target system after syncing
 		checkAccountflow = getSubFlow("retrieveAccountFlow");
 		checkAccountflow.initialise();
 
-		// Create object in target system to be updated
+		createEntities();
+		resetListeners();
+	}
+
+	@After
+	public void tearDown() throws Exception {
+		stopFlowSchedulers(POLL_FLOW_NAME);
+		deleteEntities();
+	}
+
+	@Test
+	public void testMainFlow() throws Exception {
+		runSchedulersOnce(POLL_FLOW_NAME);
+
+		waitForPollToRun();
+
+		// Assert first object was not sync
+		assertEquals("The account should not have been sync", null, invokeRetrieveAccountFlow(checkAccountflow, createdAccountsInA.get(0)));
+
+		// Assert second object was not sync
+		assertEquals("The account should not have been sync", null, invokeRetrieveAccountFlow(checkAccountflow, createdAccountsInA.get(1)));
+
+		// Assert third object was sync to target system
+		Map<String, Object> payload = invokeRetrieveAccountFlow(checkAccountflow, createdAccountsInA.get(2));
+		assertEquals("The account should have been sync", createdAccountsInA.get(2)
+																			.get("Name"), payload.get("Name"));
+		// Assert fourth object was sync to target system
+		final Map<String, Object> fourthAccount = createdAccountsInA.get(3);
+		payload = invokeRetrieveAccountFlow(checkAccountflow, fourthAccount);
+		assertEquals("The account should have been sync (Name)", fourthAccount.get("Name"), payload.get("Name"));
+	}
+
+	private void registerListeners() throws NotificationException {
+		muleContext.registerListener(pipelineListener);
+	}
+
+	private void resetListeners() {
+		pipelineListener.resetListener();
+	}
+
+	private void waitForPollToRun() {
+		System.out.println("Waiting for poll to run ones...");
+		workingPollProber.check(new ListenerProbe(pipelineListener));
+		System.out.println("Poll flow done");
+	}
+
+	@SuppressWarnings("unchecked")
+	private Map<String, Object> invokeRetrieveAccountFlow(final SubflowInterceptingChainLifecycleWrapper flow, final Map<String, Object> account) throws Exception {
+		final Map<String, Object> accountMap = new HashMap<String, Object>();
+
+		accountMap.put("Name", account.get("Name"));
+		final MuleEvent event = flow.process(getTestEvent(accountMap, MessageExchangePattern.REQUEST_RESPONSE));
+		final Object payload = event.getMessage()
+									.getPayload();
+		System.out.println("Retrieve Accounts Result for: " + account.get("Name") + " is " + payload);
+		if (payload instanceof NullPayload) {
+			return null;
+		} else {
+			return (Map<String, Object>) payload;
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private void createEntities() throws MuleException, Exception {
+
+		// Create object in target system to be update
 		final SubflowInterceptingChainLifecycleWrapper createAccountInBFlow = getSubFlow("createAccountFlowB");
 		createAccountInBFlow.initialise();
 
 		final List<Map<String, Object>> createdAccountInB = new ArrayList<Map<String, Object>>();
-		// This account should BE synced (updated) as the industry is Education, has more than 5000 Employees and the record exists in the target system
+		// This account should BE sync (updated) as the industry is Education, has more than 5000 Employees and the record exists in the target system
 		createdAccountInB.add(anAccount().withProperty("Name", buildUniqueName(KICK_NAME, "DemoUpdateAccount"))
 											.withProperty("Industry", "Education")
 											.withProperty("NumberOfEmployees", 17000)
 											.build());
-
 		createAccountInBFlow.process(getTestEvent(createdAccountInB, MessageExchangePattern.REQUEST_RESPONSE));
 
 		// Create accounts in source system to be or not to be synced
@@ -102,23 +179,20 @@ public class AccountsOneWaySyncIT extends AbstractKickTestCase {
 		System.out.println("Results after adding" + createdAccountsInA.toString());
 	}
 
-	@After
-	public void tearDown() throws Exception {
-		stopFlowSchedulers(POLL_FLOW_NAME);
-
+	private void deleteEntities() throws MuleException, Exception {
 		// Delete the created accounts in A
-		SubflowInterceptingChainLifecycleWrapper flow = getSubFlow("deleteAccountFromAFlow");
-		flow.initialise();
+		SubflowInterceptingChainLifecycleWrapper deleteAccountFromAflow = getSubFlow("deleteAccountFromAFlow");
+		deleteAccountFromAflow.initialise();
 
 		final List<Object> idList = new ArrayList<Object>();
 		for (final Map<String, Object> c : createdAccountsInA) {
 			idList.add(c.get("Id"));
 		}
-		flow.process(getTestEvent(idList, MessageExchangePattern.REQUEST_RESPONSE));
+		deleteAccountFromAflow.process(getTestEvent(idList, MessageExchangePattern.REQUEST_RESPONSE));
 
 		// Delete the created accounts in B
-		flow = getSubFlow("deleteAccountFromBFlow");
-		flow.initialise();
+		SubflowInterceptingChainLifecycleWrapper deleteAccountFromBflow = getSubFlow("deleteAccountFromBFlow");
+		deleteAccountFromBflow.initialise();
 
 		idList.clear();
 		for (final Map<String, Object> createdAccount : createdAccountsInA) {
@@ -127,49 +201,7 @@ public class AccountsOneWaySyncIT extends AbstractKickTestCase {
 				idList.add(account.get("Id"));
 			}
 		}
-		flow.process(getTestEvent(idList, MessageExchangePattern.REQUEST_RESPONSE));
-	}
-
-	@Test
-	public void testMainFlow() throws Exception {
-		System.out.println("About to run poll");
-
-		runSchedulersOnce(POLL_FLOW_NAME);
-
-		System.out.println("Poll runned");
-
-		// Assert first object was not synced
-		assertEquals("The account should not have been sync", null, invokeRetrieveAccountFlow(checkAccountflow, createdAccountsInA.get(0)));
-
-		// Assert second object was not synced
-		assertEquals("The account should not have been sync", null, invokeRetrieveAccountFlow(checkAccountflow, createdAccountsInA.get(1)));
-
-		// Assert third object was created in target system
-		Map<String, Object> payload = invokeRetrieveAccountFlow(checkAccountflow, createdAccountsInA.get(2));
-		assertEquals("The account should have been sync", createdAccountsInA.get(2)
-																			.get("Name"), payload.get("Name"));
-
-		// Assert fourth object was updated in target system
-		final Map<String, Object> fourthAccount = createdAccountsInA.get(3);
-		payload = invokeRetrieveAccountFlow(checkAccountflow, fourthAccount);
-		assertEquals("The account should have been sync (Name)", fourthAccount.get("Name"), payload.get("Name"));
-
-	}
-
-	@SuppressWarnings("unchecked")
-	private Map<String, Object> invokeRetrieveAccountFlow(final SubflowInterceptingChainLifecycleWrapper flow, final Map<String, Object> account) throws Exception {
-		final Map<String, Object> accountMap = new HashMap<String, Object>();
-
-		accountMap.put("Name", account.get("Name"));
-		final MuleEvent event = flow.process(getTestEvent(accountMap, MessageExchangePattern.REQUEST_RESPONSE));
-		final Object payload = event.getMessage()
-									.getPayload();
-		System.out.println("Retrieve Accounts Result for: " + account.get("Name") + " is " + payload);
-		if (payload instanceof NullPayload) {
-			return null;
-		} else {
-			return (Map<String, Object>) payload;
-		}
+		deleteAccountFromBflow.process(getTestEvent(idList, MessageExchangePattern.REQUEST_RESPONSE));
 	}
 
 	// ***************************************************************

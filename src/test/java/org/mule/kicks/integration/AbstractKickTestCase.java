@@ -15,7 +15,6 @@ import org.mule.api.schedule.Schedulers;
 import org.mule.construct.Flow;
 import org.mule.processor.chain.SubflowInterceptingChainLifecycleWrapper;
 import org.mule.tck.junit4.FunctionalTestCase;
-import org.mule.transport.polling.schedule.FixedFrequencyScheduler;
 
 /**
  * This is the base test class for Kicks integration tests.
@@ -34,8 +33,7 @@ public class AbstractKickTestCase extends FunctionalTestCase {
 
 	@AfterClass
 	public static void afterClass() {
-		System.getProperties()
-				.remove("mule.env");
+		System.getProperties().remove("mule.env");
 	}
 
 	@Override
@@ -60,11 +58,8 @@ public class AbstractKickTestCase extends FunctionalTestCase {
 		File[] listOfFiles = testFlowsFolder.listFiles();
 		if (listOfFiles != null) {
 			for (File f : listOfFiles) {
-				if (f.isFile() && f.getName()
-									.endsWith("xml")) {
-					resources.append(",")
-								.append(TEST_FLOWS_FOLDER_PATH)
-								.append(f.getName());
+				if (f.isFile() && f.getName().endsWith("xml")) {
+					resources.append(",").append(TEST_FLOWS_FOLDER_PATH).append(f.getName());
 				}
 			}
 			return resources.toString();
@@ -86,18 +81,15 @@ public class AbstractKickTestCase extends FunctionalTestCase {
 	}
 
 	protected Flow getFlow(String flowName) {
-		return (Flow) muleContext.getRegistry()
-									.lookupObject(flowName);
+		return (Flow) muleContext.getRegistry().lookupObject(flowName);
 	}
 
 	protected SubflowInterceptingChainLifecycleWrapper getSubFlow(String flowName) {
-		return (SubflowInterceptingChainLifecycleWrapper) muleContext.getRegistry()
-																		.lookupObject(flowName);
+		return (SubflowInterceptingChainLifecycleWrapper) muleContext.getRegistry().lookupObject(flowName);
 	}
 
 	protected void runSchedulersOnce(String flowName) throws Exception {
-		final Collection<Scheduler> schedulers = muleContext.getRegistry()
-															.lookupScheduler(Schedulers.flowPollingSchedulers(flowName));
+		final Collection<Scheduler> schedulers = muleContext.getRegistry().lookupScheduler(Schedulers.flowPollingSchedulers(flowName));
 
 		for (final Scheduler scheduler : schedulers) {
 			scheduler.schedule();
@@ -105,8 +97,7 @@ public class AbstractKickTestCase extends FunctionalTestCase {
 	}
 
 	protected void stopFlowSchedulers(String flowName) throws MuleException {
-		final Collection<Scheduler> schedulers = muleContext.getRegistry()
-															.lookupScheduler(Schedulers.flowPollingSchedulers(flowName));
+		final Collection<Scheduler> schedulers = muleContext.getRegistry().lookupScheduler(Schedulers.flowPollingSchedulers(flowName));
 		for (final Scheduler scheduler : schedulers) {
 			scheduler.stop();
 		}
@@ -121,7 +112,5 @@ public class AbstractKickTestCase extends FunctionalTestCase {
 		builder.append(timeStamp);
 
 		return builder.toString();
-
 	}
-
 }

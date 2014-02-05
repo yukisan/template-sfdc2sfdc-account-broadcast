@@ -23,7 +23,7 @@ Here you should not:
 	* Run validations against external systems
 	* Choose flow of you application based on input parameters">
     	<poll doc:name="Poll">
-            <fixed-frequency-scheduler frequency="${polling.frequency}" />
+            <fixed-frequency-scheduler frequency="${polling.frequency}" startDelay="${polling.start.delay}" />
             <watermark variable="lastQueryDate" default-expression="${watermark.default.expression}" selector="MAX" selector-expression="#[payload.LastModifiedDate]"/>
              <sfdc:query-all config-ref="SalesforceA" doc:name="Fetch Accounts with filtering criteria" query="SELECT AccountNumber, AccountSource, AnnualRevenue, BillingCity, BillingCountry, BillingPostalCode, BillingState, BillingStreet, Description, Fax, Industry, LastModifiedDate, Name, NumberOfEmployees, OwnerId, Ownership, ParentId, Phone, Rating, RecordTypeId, ShippingCity, ShippingCountry, ShippingPostalCode, ShippingState, ShippingStreet, Sic, SicDesc, Site, TickerSymbol, Type, Website FROM Account WHERE LastModifiedDate &gt; #[flowVars['lastQueryDate']] AND NumberOfEmployees &gt; 5000 AND Industry IN ('Education','Government')">
             </sfdc:query-all>

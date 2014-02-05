@@ -13,7 +13,6 @@ import org.mule.context.notification.PipelineMessageNotification;
  * state of readyToContinue to true.
  * 
  * @author damiansima
- * 
  */
 public class PipelineSynchronizeListener implements PipelineMessageNotificationListener<PipelineMessageNotification> {
 	private String flowToCheck;
@@ -42,15 +41,15 @@ public class PipelineSynchronizeListener implements PipelineMessageNotificationL
 		}
 	}
 
-	public synchronized boolean readyToContinue() {
+	public boolean readyToContinue() {
 		return readyToContinue;
 	}
 
-	public synchronized boolean resetListener() {
+	public boolean resetListener() {
 		return readyToContinue = false;
 	}
 
-	public synchronized Object getNotificatedPayload() {
+	public Object getNotificatedPayload() {
 		return notificatedPayload;
 	}
 }

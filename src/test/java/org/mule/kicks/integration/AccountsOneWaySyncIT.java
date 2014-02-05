@@ -9,7 +9,6 @@ import java.util.Map;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mule.MessageExchangePattern;
 import org.mule.api.MuleEvent;
@@ -40,28 +39,16 @@ public class AccountsOneWaySyncIT extends AbstractKickTestCase {
 
 	private final PipelineSynchronizeListener pipelineListener = new PipelineSynchronizeListener(POLL_FLOW_NAME);
 
-	@BeforeClass
-	public static void beforeClass() {
-		// Setting Default Watermark Expression to query SFDC with LastModifiedDate greater than ten seconds before current time
-		System.setProperty("watermark.default.expression", "#[groovy: new Date(System.currentTimeMillis() - 10000).format(\"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'\", TimeZone.getTimeZone('UTC'))]");
-
-		// Setting Polling Frecuency to 10 seconds period
-		System.setProperty("polling.frequency", "10000");
-
-	}
-
 	@Before
 	public void setUp() throws Exception {
 		stopFlowSchedulers(POLL_FLOW_NAME);
 		registerListeners();
-		waitForPollToRun();
 
 		// Flow to retrieve accounts from target system after syncing
 		checkAccountflow = getSubFlow("retrieveAccountFlow");
 		checkAccountflow.initialise();
 
 		createEntities();
-		resetListeners();
 	}
 
 	@After

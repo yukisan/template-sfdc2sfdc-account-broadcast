@@ -18,6 +18,7 @@ import org.mule.api.MuleEvent;
 import org.mule.api.MuleException;
 import org.mule.api.context.notification.ServerNotification;
 import org.mule.context.notification.NotificationException;
+import org.mule.kicks.builders.SfdcObjectBuilder;
 import org.mule.kicks.test.utils.ListenerProbe;
 import org.mule.kicks.test.utils.PipelineSynchronizeListener;
 import org.mule.processor.chain.SubflowInterceptingChainLifecycleWrapper;
@@ -99,7 +100,7 @@ public class BusinessLogicIT extends AbstractKickTestCase {
 		// Run poll and wait for it to run
 		runSchedulersOnce(POLL_FLOW_NAME);
 		waitForPollToRun();
-		
+
 		// Wait for the batch job executed by the poll flow to finish
 		BatchJobInstance batchJobInstance = (BatchJobInstance) pipelineListener.getNotificatedPayload();
 		awaitJobTermination();
@@ -152,11 +153,12 @@ public class BusinessLogicIT extends AbstractKickTestCase {
 		final SubflowInterceptingChainLifecycleWrapper createAccountInBFlow = getSubFlow("createAccountFlowB");
 		createAccountInBFlow.initialise();
 
+		SfdcObjectBuilder updateAccount = anAccount().with("Name", buildUniqueName(KICK_NAME, "DemoUpdateAccount"))
+														.with("Industry", "Education");
+
 		final List<Map<String, Object>> createdAccountInB = new ArrayList<Map<String, Object>>();
 		// This account should BE sync (updated) as the industry is Education, has more than 5000 Employees and the record exists in the target system
-		createdAccountInB.add(anAccount().with("Name", buildUniqueName(KICK_NAME, "DemoUpdateAccount"))
-											.with("Industry", "Education")
-											.with("NumberOfEmployees", 17000)
+		createdAccountInB.add(updateAccount.with("NumberOfEmployees", 17000)
 											.build());
 		createAccountInBFlow.process(getTestEvent(createdAccountInB, MessageExchangePattern.REQUEST_RESPONSE));
 
@@ -183,9 +185,7 @@ public class BusinessLogicIT extends AbstractKickTestCase {
 											.build());
 
 		// This account should BE synced (updated) as the number of employees if greater than 5000 and the industry is "Education"
-		createdAccountsInA.add(anAccount().with("Name", buildUniqueName(KICK_NAME, "DemoUpdateAccount"))
-											.with("Industry", "Education")
-											.with("NumberOfEmployees", 12000)
+		createdAccountsInA.add(updateAccount.with("NumberOfEmployees", 12000)
 											.build());
 
 		final MuleEvent event = createAccountInAFlow.process(getTestEvent(createdAccountsInA, MessageExchangePattern.REQUEST_RESPONSE));

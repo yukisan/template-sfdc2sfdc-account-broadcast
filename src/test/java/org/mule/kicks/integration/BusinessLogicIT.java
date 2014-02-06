@@ -19,6 +19,7 @@ import org.mule.api.MuleException;
 import org.mule.api.context.notification.ServerNotification;
 import org.mule.context.notification.NotificationException;
 import org.mule.kicks.builders.SfdcObjectBuilder;
+import org.mule.kicks.test.utils.BatchTestHelper;
 import org.mule.kicks.test.utils.ListenerProbe;
 import org.mule.kicks.test.utils.PipelineSynchronizeListener;
 import org.mule.processor.chain.SubflowInterceptingChainLifecycleWrapper;
@@ -27,10 +28,8 @@ import org.mule.tck.probe.Probe;
 import org.mule.tck.probe.Prober;
 import org.mule.transport.NullPayload;
 
-import com.mulesoft.module.batch.api.BatchJobInstance;
 import com.mulesoft.module.batch.api.notification.BatchNotification;
 import com.mulesoft.module.batch.api.notification.BatchNotificationListener;
-import com.mulesoft.module.batch.engine.BatchJobInstanceAdapter;
 import com.mulesoft.module.batch.engine.BatchJobInstanceStore;
 import com.sforce.soap.partner.SaveResult;
 
@@ -43,7 +42,7 @@ public class BusinessLogicIT extends AbstractKickTestCase {
 	private static final String POLL_FLOW_NAME = "triggerFlow";
 	private static final String KICK_NAME = "sfdc2sfdc-accounts-onewaysync";
 
-	private static final int TIMEOUT = 60;
+	private static final int TIMEOUT_MILLIS = 60;
 
 	private static SubflowInterceptingChainLifecycleWrapper checkAccountflow;
 	private static List<Map<String, Object>> createdAccountsInA = new ArrayList<Map<String, Object>>();
@@ -51,9 +50,7 @@ public class BusinessLogicIT extends AbstractKickTestCase {
 	private final Prober pollProber = new PollingProber(10000, 1000);
 	private final PipelineSynchronizeListener pipelineListener = new PipelineSynchronizeListener(POLL_FLOW_NAME);
 
-	private Prober prober;
-	protected Boolean failed;
-	protected BatchJobInstanceStore jobInstanceStore;
+	private BatchTestHelper helper;
 
 	@BeforeClass
 	public static void setTestProperties() {
@@ -74,10 +71,7 @@ public class BusinessLogicIT extends AbstractKickTestCase {
 		stopFlowSchedulers(POLL_FLOW_NAME);
 		registerListeners();
 
-		failed = null;
-		jobInstanceStore = muleContext.getRegistry()
-										.lookupObject(BatchJobInstanceStore.class);
-		muleContext.registerListener(new BatchWaitListener());
+		helper = new BatchTestHelper(muleContext);
 
 		// Flow to retrieve accounts from target system after syncing
 		checkAccountflow = getSubFlow("retrieveAccountFlow");
@@ -90,8 +84,6 @@ public class BusinessLogicIT extends AbstractKickTestCase {
 	public void tearDown() throws Exception {
 		stopFlowSchedulers(POLL_FLOW_NAME);
 
-		failed = null;
-
 		deleteEntities();
 	}
 
@@ -102,10 +94,8 @@ public class BusinessLogicIT extends AbstractKickTestCase {
 		waitForPollToRun();
 
 		// Wait for the batch job executed by the poll flow to finish
-		BatchJobInstance batchJobInstance = (BatchJobInstance) pipelineListener.getNotificatedPayload();
-		awaitJobTermination();
-		assertTrue("Batch job was not successful", wasJobSuccessful());
-		batchJobInstance = getUpdatedInstance(batchJobInstance);
+		helper.awaitJobTermination(TIMEOUT_MILLIS * 1000, 500);
+		helper.assertJobWasSuccessful();
 
 		// Assert first object was not sync
 		assertEquals("The account should not have been sync", null, invokeRetrieveAccountFlow(checkAccountflow, createdAccountsInA.get(0)));
@@ -224,46 +214,4 @@ public class BusinessLogicIT extends AbstractKickTestCase {
 		deleteAccountFromBflow.process(getTestEvent(idList, MessageExchangePattern.REQUEST_RESPONSE));
 	}
 
-	protected class BatchWaitListener implements BatchNotificationListener {
-
-		public synchronized void onNotification(ServerNotification notification) {
-			final int action = notification.getAction();
-
-			if (action == BatchNotification.JOB_SUCCESSFUL || action == BatchNotification.JOB_STOPPED) {
-				failed = false;
-			} else if (action == BatchNotification.JOB_PROCESS_RECORDS_FAILED || action == BatchNotification.LOAD_PHASE_FAILED || action == BatchNotification.INPUT_PHASE_FAILED
-					|| action == BatchNotification.ON_COMPLETE_FAILED) {
-
-				failed = true;
-			}
-		}
-	}
-
-	protected void awaitJobTermination() throws Exception {
-		this.awaitJobTermination(TIMEOUT);
-	}
-
-	protected void awaitJobTermination(long timeoutSecs) throws Exception {
-		this.prober = new PollingProber(timeoutSecs * 1000, 500);
-		this.prober.check(new Probe() {
-
-			@Override
-			public boolean isSatisfied() {
-				return failed != null;
-			}
-
-			@Override
-			public String describeFailure() {
-				return "batch job timed out";
-			}
-		});
-	}
-
-	protected boolean wasJobSuccessful() {
-		return this.failed != null ? !this.failed : false;
-	}
-
-	protected BatchJobInstanceAdapter getUpdatedInstance(BatchJobInstance jobInstance) {
-		return this.jobInstanceStore.getJobInstance(jobInstance.getOwnerJobName(), jobInstance.getId());
-	}
 }

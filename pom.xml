@@ -7,7 +7,7 @@
 	<artifactId>sfdc2sfdc-accounts-onewaysync</artifactId>
 	<packaging>mule</packaging>
 	<version>1.0.0</version>
-    <name>SFDC2SFDC Accounts One way sync Mule Kick Project</name>
+	<name>SFDC2SFDC Accounts One way sync Mule Kick Project</name>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -94,6 +94,10 @@
 						<inclusion>
 							<groupId>org.mule.modules</groupId>
 							<artifactId>mule-module-sfdc</artifactId>
+						</inclusion>
+						<inclusion>
+							<groupId>org.mule.modules</groupId>
+							<artifactId>mule-module-json</artifactId>
 						</inclusion>
 					</inclusions>
 				</configuration>
@@ -299,6 +303,12 @@
 	<!-- Mule Dependencies -->
 	<dependencies>
 		<dependency>
+			<groupId>org.mule.modules</groupId>
+			<artifactId>mule-module-json</artifactId>
+			<version>${mule.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
 			<groupId>org.mule</groupId>
 			<artifactId>mule-core</artifactId>
 			<version>${mule.version}</version>
@@ -406,6 +416,18 @@
 			<scope>provided</scope>
 		</dependency>
 		<!-- for testing -->
+		<dependency>
+			<groupId>xalan</groupId>
+			<artifactId>xalan</artifactId>
+			<version>2.7.1</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.mulesoft.muleesb.modules</groupId>
+			<artifactId>mule-module-batch-ee</artifactId>
+			<version>${mule.version}</version>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.mule.modules</groupId>
 			<artifactId>mule-module-devkit-support</artifactId>

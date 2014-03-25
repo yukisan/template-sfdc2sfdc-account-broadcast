@@ -1,41 +1,48 @@
-package org.mule.kicks.integration;
+package org.mule.templates.integration;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.util.Collection;
 import java.util.Date;
+import java.util.Map;
 import java.util.Properties;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.mule.api.MuleException;
+import org.junit.Rule;
+import org.mule.MessageExchangePattern;
+import org.mule.api.MuleEvent;
 import org.mule.api.config.MuleProperties;
-import org.mule.api.schedule.Scheduler;
-import org.mule.api.schedule.Schedulers;
-import org.mule.construct.Flow;
 import org.mule.processor.chain.SubflowInterceptingChainLifecycleWrapper;
 import org.mule.tck.junit4.FunctionalTestCase;
+import org.mule.tck.junit4.rule.DynamicPort;
+import org.mule.tck.probe.PollingProber;
+import org.mule.tck.probe.Prober;
+import org.mule.templates.test.utils.PipelineSynchronizeListener;
+import org.mule.transport.NullPayload;
 
 /**
- * This is the base test class for Kicks integration tests.
+ * This is the base test class for Anypoint Template integration tests.
  * 
  * @author damiansima
  */
-public class AbstractKickTestCase extends FunctionalTestCase {
+public class AbstractTemplateTestCase extends FunctionalTestCase {
 	private static final String MAPPINGS_FOLDER_PATH = "./mappings";
 	private static final String TEST_FLOWS_FOLDER_PATH = "./src/test/resources/flows/";
 	private static final String MULE_DEPLOY_PROPERTIES_PATH = "./src/main/app/mule-deploy.properties";
 
-	@BeforeClass
-	public static void beforeClass() {
-		System.setProperty("mule.env", "test");
-	}
+	protected static final int TIMEOUT_SEC = 300;
+	protected static final String POLL_FLOW_NAME = "triggerFlow";
+	protected static final String TEMPLATE_NAME = "account-broadcast";
 
-	@AfterClass
-	public static void afterClass() {
-		System.getProperties().remove("mule.env");
-	}
+	protected final Prober pollProber = new PollingProber(60000, 1000l);
+	protected final PipelineSynchronizeListener pipelineListener = new PipelineSynchronizeListener(POLL_FLOW_NAME);
 
+	protected SubflowInterceptingChainLifecycleWrapper retrieveAccountFromBFlow;
+
+	@Rule
+	public DynamicPort port = new DynamicPort("http.port");
+	
+	
 	@Override
 	protected String getConfigResources() {
 		String resources = "";
@@ -67,6 +74,19 @@ public class AbstractKickTestCase extends FunctionalTestCase {
 			return "";
 		}
 	}
+	
+	@SuppressWarnings("unchecked")
+	protected Map<String, Object> invokeRetrieveFlow(SubflowInterceptingChainLifecycleWrapper flow, Map<String, Object> payload) throws Exception {
+		MuleEvent event = flow.process(getTestEvent(payload, MessageExchangePattern.REQUEST_RESPONSE));
+		Object resultPayload = event.getMessage()
+									.getPayload();
+
+		if (resultPayload instanceof NullPayload) {
+			return null;
+		} else {
+			return (Map<String, Object>) resultPayload;
+		}
+	}
 
 	@Override
 	protected Properties getStartUpProperties() {
@@ -80,35 +100,12 @@ public class AbstractKickTestCase extends FunctionalTestCase {
 		return properties;
 	}
 
-	protected Flow getFlow(String flowName) {
-		return (Flow) muleContext.getRegistry().lookupObject(flowName);
-	}
-
-	protected SubflowInterceptingChainLifecycleWrapper getSubFlow(String flowName) {
-		return (SubflowInterceptingChainLifecycleWrapper) muleContext.getRegistry().lookupObject(flowName);
-	}
-
-	protected void runSchedulersOnce(String flowName) throws Exception {
-		final Collection<Scheduler> schedulers = muleContext.getRegistry().lookupScheduler(Schedulers.flowPollingSchedulers(flowName));
-
-		for (final Scheduler scheduler : schedulers) {
-			scheduler.schedule();
-		}
-	}
-
-	protected void stopFlowSchedulers(String flowName) throws MuleException {
-		final Collection<Scheduler> schedulers = muleContext.getRegistry().lookupScheduler(Schedulers.flowPollingSchedulers(flowName));
-		for (final Scheduler scheduler : schedulers) {
-			scheduler.stop();
-		}
-	}
-
-	protected String buildUniqueName(String kickName, String name) {
+	protected String buildUniqueName(String templateName, String name) {
 		String timeStamp = new Long(new Date().getTime()).toString();
 
 		StringBuilder builder = new StringBuilder();
 		builder.append(name);
-		builder.append(kickName);
+		builder.append(templateName);
 		builder.append(timeStamp);
 
 		return builder.toString();

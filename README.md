@@ -1,5 +1,6 @@
 # Anypoint Template: SFDC to SFDC Account Broadcast
 
++ [License Agreement](#licenseagreement)
 + [Use Case](#usecase)
 + [Run it!](#runit)
     * [Running on premise](#runonopremise)
@@ -12,6 +13,9 @@
     * [errorHandling.xml](#errorhandlingxml)
 + [Testing the Anypoint Tempalte](#testingtheanypointtemplate)
  
+# License Agreement <a name="licenseagreement"/>
+Note that using this template is subject to the conditions of this [License Agreement](AnypointTemplateLicense.pdf).
+Please review the terms of the license before downloading and using this template. In short, you are allowed to use the template for free with Mule ESB Enterprise Edition, CloudHub, or as a trial in Anypoint Studio.
 
 # Use Case <a name="usecase"/>
 As a Salesforce admin I want to syncronize accounts between two Salesfoce orgs.

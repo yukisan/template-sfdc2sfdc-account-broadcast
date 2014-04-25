@@ -19,7 +19,7 @@
 
 		<sfdc.version>5.4.3</sfdc.version>
 
-		
+
 		<eclipsePluginVersion>2.8</eclipsePluginVersion>
 		<jdkName>JavaSE-1.6</jdkName>
 		<jdk.version>1.6</jdk.version>
@@ -433,8 +433,14 @@
 			<version>${mule.version}</version>
 			<scope>provided</scope>
 		</dependency>
-		
+
 		<!-- for testing -->
+		<dependency>
+			<groupId>xalan</groupId>
+			<artifactId>xalan</artifactId>
+			<version>2.7.1</version>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>mockobjects</groupId>
 			<artifactId>mockobjects-core</artifactId>

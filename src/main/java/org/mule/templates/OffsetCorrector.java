@@ -1,5 +1,6 @@
 package org.mule.templates;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.javatuples.Pair;
@@ -47,8 +48,17 @@ public class OffsetCorrector {
 
 	public List<Integer> calculateDeltaForEachPair(
 			List<Pair<String, String>> timeValues) {
-		// TODO Auto-generated method stub
-		return null;
+		List<Integer> deltas = new ArrayList<Integer>(); 
+		for (Pair<String, String> times : timeValues) {
+			DateTime date1 = fmt.parseDateTime(times.getValue0());
+			date1 = date1.withZone(DateTimeZone.UTC);
+			
+			DateTime date2 = fmt.parseDateTime(times.getValue1());
+			date2 = date2.withZone(DateTimeZone.UTC);
+			
+			deltas.add((int) (date1.getMillis() - date2.getMillis()));
+		}
+		return deltas;
 	}
 
 	public int weightedMean(List<Integer> deltas) {

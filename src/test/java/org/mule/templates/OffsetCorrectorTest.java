@@ -3,6 +3,7 @@ package org.mule.templates;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.javatuples.Pair;
 import org.junit.Before;
 import org.junit.Test;
 //import org.mule.MessageExchangePattern;
@@ -11,6 +12,7 @@ import org.junit.Test;
 import org.mule.templates.OffsetCorrector;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 //import static org.mockito.Mockito.*;
 
 public class OffsetCorrectorTest {
@@ -206,6 +208,26 @@ public class OffsetCorrectorTest {
 		deltas.add(4);
 		
 		assertEquals("The delta obtained is not the same one as the one expected", 2, corrector.weightedMean(deltas));	
+	}
+	
+	@Test
+	public void forEveryPairOfTimeValuesGivenTheResultHasADeltaThatRepresentsTheDifferenceBetweenThem() {
+		List<Pair<String, String>> timeValues = new ArrayList<Pair<String, String>>();
+		timeValues.add(new Pair<String, String>("2014-05-20T14:12:03.000-03:00", "2014-05-20T14:12:03.000-03:00"));
+		timeValues.add(new Pair<String, String>("2014-05-20T14:12:03.000-03:00", "2014-05-20T14:13:03.000-03:00"));
+		timeValues.add(new Pair<String, String>("2014-05-20T14:12:03.000-03:00", "2014-05-20T14:11:05.000-03:00"));
+		timeValues.add(new Pair<String, String>("2014-05-20T14:12:03.000-03:00", "2014-05-20T14:30:00.123-03:00"));
+		
+		assertTrue("The delta time between 2014-05-20T14:12:03.000-03:00 and 2014-05-20T14:12:03.000-03:00 is not included in the output list", 
+				corrector.calculateDeltaForEachPair(timeValues).contains(0));	
+		assertTrue("The delta time between 2014-05-20T14:12:03.000-03:00 and 2014-05-20T14:13:03.000-03:00 is not included in the output list", 
+				corrector.calculateDeltaForEachPair(timeValues).contains(-60000));	
+		assertTrue("The delta time between 2014-05-20T14:12:03.000-03:00 and 2014-05-20T14:12:01.000-03:00 is not included in the output list", 
+				corrector.calculateDeltaForEachPair(timeValues).contains(58000));	
+		assertTrue("The delta time between 2014-05-20T14:12:03.000-03:00 and 2014-05-20T14:30:00.123-03:00 is not included in the output list", 
+				corrector.calculateDeltaForEachPair(timeValues).contains(-1077123));	
+		
+		assertTrue("The output list includes more elements than expected", corrector.calculateDeltaForEachPair(timeValues).size() == 4);	
 	}
 
 	//	@Test

@@ -325,6 +325,12 @@
 			<version>${mule.version}</version>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+	        <groupId>org.javatuples</groupId>
+	        <artifactId>javatuples</artifactId>
+	        <version>1.2</version>
+	        <scope>compile</scope>
+	    </dependency>
 		<!-- Xml configuration -->
 		<dependency>
 			<groupId>org.mule.modules</groupId>

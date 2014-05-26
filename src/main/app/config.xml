@@ -23,5 +23,20 @@ http://www.springframework.org/schema/context http://www.springframework.org/sch
     <sfdc:config name="SalesforceB" username="${sfdc.b.username}" password="${sfdc.b.password}" securityToken="${sfdc.b.securityToken}" url="${sfdc.b.url}" doc:name="Salesforce" doc:description="One of your SalesForce instances, this is were the objects will be updated/created.">
         <sfdc:connection-pooling-profile initialisationPolicy="INITIALISE_ONE" exhaustedAction="WHEN_EXHAUSTED_GROW"/>
     </sfdc:config>
+    <spring:beans>
+        <spring:bean id="OffsetCorrector" name="Bean" class="org.mule.templates.OffsetCorrector" scope="singleton"/>
+    </spring:beans>
+    <sub-flow name="getSystemsTime" doc:name="getSystemsTime">
+        <scatter-gather doc:name="SG">
+            <processor-chain>
+                <sfdc:get-server-timestamp config-ref="SalesforceA" doc:name="get server timestamp"/>
+                <custom-transformer class="org.mule.templates.transformers.GregorianCalendarToISOStandardFormatDate" doc:name="transform to ISO standard format date"/>
+            </processor-chain>
+            <processor-chain>
+                <sfdc:get-server-timestamp config-ref="SalesforceB" doc:name="get server timestamp"/>
+                <custom-transformer class="org.mule.templates.transformers.GregorianCalendarToISOStandardFormatDate" doc:name="transform to ISO standard format date"/>
+            </processor-chain>
+        </scatter-gather>
+    </sub-flow>
     
 </mule>

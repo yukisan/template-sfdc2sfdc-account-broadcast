@@ -6,29 +6,19 @@ import java.util.List;
 import org.javatuples.Pair;
 import org.junit.Before;
 import org.junit.Test;
-//import org.mule.MessageExchangePattern;
-//import org.mule.processor.chain.SubflowInterceptingChainLifecycleWrapper;
-//import org.mule.tck.junit4.FunctionalTestCase;
 import org.mule.templates.OffsetCorrector;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-//import static org.mockito.Mockito.*;
 
 public class OffsetCorrectorTest {
 	
 	OffsetCorrector corrector;
-//	private static SubflowInterceptingChainLifecycleWrapper getSystemTimeFromAFlow;
-//	private static SubflowInterceptingChainLifecycleWrapper getSystemTimeFromBFlow;
 	
 	@Before
 	public void setUp() {
 		// Initialize the component to be tested 		
 		corrector = new OffsetCorrector();
-		
-		// Create mock objects
-//		getSystemTimeFromAFlow = mock(SubflowInterceptingChainLifecycleWrapper.class);
-//		getSystemTimeFromBFlow = mock(SubflowInterceptingChainLifecycleWrapper.class);
 	}
 	
 	@Test
@@ -229,31 +219,5 @@ public class OffsetCorrectorTest {
 		
 		assertTrue("The output list includes more elements than expected", corrector.calculateDeltaForEachPair(timeValues).size() == 4);	
 	}
-
-	//	@Test
-//	public void theDeltaIsBeingProperlyUpdated() throws MuleException, Exception {
-//		String systemTimeInA1 = "2014-05-20T14:12:03.000Z";
-//		String systemTimeInA2 = "2014-05-20T14:12:08.000Z";
-//		String systemTimeInA3 = "2014-05-20T14:12:11.000Z";
-//		when(getSystemTimeFromAFlow.process(FunctionalTestCase.getTestEvent(null, MessageExchangePattern.REQUEST_RESPONSE)).getMessage().getPayload())
-//		.thenReturn(systemTimeInA1)
-//		.thenReturn(systemTimeInA2)
-//		.thenReturn(systemTimeInA3);
-//		
-//		String systemTimeInB1 = "2014-05-20T14:12:03.000Z";
-//		String systemTimeInB2 = "2014-05-20T14:12:07.500Z";
-//		String systemTimeInB3 = "2014-05-20T14:12:11.500Z";
-//		when(getSystemTimeFromBFlow.process(FunctionalTestCase.getTestEvent(null, MessageExchangePattern.REQUEST_RESPONSE)).getMessage().getPayload())
-//		.thenReturn(systemTimeInB1)
-//		.thenReturn(systemTimeInB2)
-//		.thenReturn(systemTimeInB3);
-//		
-//		int expected = 0;
-//		int actual = adapter.updateDelta();
-//		assertEquals("Something did not went as expected when calculating and updaing the value of the delta", expected, actual);
-//		
-//		
-//	}
-	
 
 }

@@ -32,5 +32,11 @@ Here you should not:
         <logger message="#[payload]" level="INFO" doc:name="log created/updated Accounts"/>
         <batch:execute name="syncAccountsBatch" doc:name="trigger syncAccountsBatch"/>
     </flow>
+    <flow name="triggerDeltaUpdate" doc:name="triggerDeltaUpdate">
+        <poll doc:name="Poll">
+            <fixed-frequency-scheduler frequency="1" timeUnit="DAYS"/>
+        </poll>
+        <expression-transformer expression="#[org.mule.templatesOffsetCorrector.updateDelta()]" doc:name="update offset corrector delta"/>
+    </flow>
     
 </mule>

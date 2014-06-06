@@ -33,7 +33,7 @@ Here you should:
 	* Handle any input parameter and set the scope of it so the main logic does not care from where it is called
 Here you should not: 
 	* Run validations against external systems
-	* Choose flow of you application based on input parameters" initialState="stopped">
+	* Choose flow of you application based on input parameters" initialState="started">
     	<poll doc:name="fireup Account synchronization">
             <fixed-frequency-scheduler frequency="${polling.frequency}" startDelay="${polling.start.delay}" />
             <watermark variable="lastQueryDate" default-expression="${watermark.default.expression}" selector="MAX" selector-expression="#[payload.LastModifiedDate]"/>

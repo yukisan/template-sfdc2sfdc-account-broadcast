@@ -26,6 +26,7 @@ import com.mulesoft.module.batch.BatchTestHelper;
  * Anypoint Template that make calls to external systems.
  * 
  */
+@SuppressWarnings("unchecked")
 public class BusinessLogicPushNotificationIT extends AbstractTemplateTestCase {
 	
 	private static final int TIMEOUT_MILLIS = 60;
@@ -67,9 +68,6 @@ public class BusinessLogicPushNotificationIT extends AbstractTemplateTestCase {
 		message = new DefaultMuleMessage(account, muleContext);
 		testEvent = getTestEvent(message, MessageExchangePattern.REQUEST_RESPONSE);
 		Map<String, String> accountInB = (Map<String, String>) retrieveAccountFlow.process(testEvent).getMessage().getPayload();
-
-		
-		System.err.println(accountInB);
 		
 		// Assertions
 		Assert.assertNotNull(accountInB);

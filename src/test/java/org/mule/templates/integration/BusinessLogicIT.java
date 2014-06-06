@@ -69,6 +69,7 @@ public class BusinessLogicIT extends AbstractTemplateTestCase {
 
 		// Assert third object was sync to target system 
 		Map<String, Object> payload = invokeRetrieveFlow(retrieveAccountFromBFlow, createdAccountsInA.get(2));
+		System.err.println(createdAccountsInA.size());
 		System.err.println(createdAccountsInA.get(2));
 		System.err.println(payload);
 		assertEquals("The account should have been sync", createdAccountsInA.get(2).get("Name"), payload.get("Name"));
@@ -121,7 +122,7 @@ public class BusinessLogicIT extends AbstractTemplateTestCase {
 
 		// This account should BE synced (updated) as the number of employees if
 		// greater than 5000 and the industry is "Education"
-		createdAccountsInA.add(updateAccount.with("NumberOfEmployees", 12000).build());
+		createdAccountsInA.add(updateAccount.with("NumberOfEmployees", 12000).with("Industry", "Education").build());
 
 		final MuleEvent event = createAccountInAFlow.process(getTestEvent(createdAccountsInA, MessageExchangePattern.REQUEST_RESPONSE));
 		final List<SaveResult> results = (List<SaveResult>) event.getMessage().getPayload();

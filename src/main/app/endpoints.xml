@@ -40,7 +40,7 @@ Here you should not:
              <sfdc:query config-ref="SalesforceA" doc:name="query Accounts with filtering criteria from Salesforce Instance A" query="dsql:SELECT AccountNumber, AccountSource, AnnualRevenue, BillingCity, BillingCountry, BillingPostalCode, BillingState, BillingStreet, Description, Fax, Industry, LastModifiedDate, Name, NumberOfEmployees, OwnerId, Ownership, ParentId, Phone, Rating, ShippingCity, ShippingCountry, ShippingPostalCode, ShippingState, ShippingStreet, Sic, SicDesc, Site, TickerSymbol, Type, Website FROM Account WHERE LastModifiedDate &gt; #[flowVars['lastQueryDate']] AND NumberOfEmployees &gt; 5000 AND (Industry = 'Education' OR  Industry = 'Government')">
             </sfdc:query>
         </poll>
-        <logger message="#[payload]" level="INFO" doc:name="log created/updated Accounts"/>
+        <logger message="retrieved account number: #[payload.size()]" level="INFO" doc:name="log created/updated Accounts"/>
         <batch:execute name="syncAccountsBatch" doc:name="trigger syncAccountsBatch"/>
     </flow>
     

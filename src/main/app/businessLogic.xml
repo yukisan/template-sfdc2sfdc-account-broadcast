@@ -16,6 +16,7 @@ http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/ba
 		<batch:threading-profile poolExhaustedAction="WAIT" />
 		<batch:process-records>
 			<batch:step name="foreachAccountInAGetAccountInBStep">
+                <logger message="Current account: #[payload]" level="INFO" doc:name="Logger"/>
 				<enricher source="#[payload]" target="#[recordVars['accountInB']]"
 					doc:name="store result in record var 'accountInB'">
 					<sfdc:query-single config-ref="SalesforceB"

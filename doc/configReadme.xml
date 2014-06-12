@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+<configuration>
+<placeholders>
+	<placeholder id="template_name">SFDC to DB Account Broadcast</placeholder>
+</placeholders>
+<sections>
+<section id="use_case">
+As a Salesforce admin I want to syncronize accounts between two Salesfoce orgs.
+
+This Anypoint Template should serve as a foundation for setting an online sync of accounts from one SalesForce instance to another. Everytime there is a new account or a change in an already existing one, the integration will poll for changes in SalesForce source instance and it will be responsible for updating the account on the target org.
+
+Requirements have been set not only to be used as examples, but also to establish a starting point to adapt your integration to your requirements.
+
+As implemented, this Anypoint Template leverage the [Batch Module](http://www.mulesoft.org/documentation/display/current/Batch+Processing).
+The batch job is divided in Input, Process and On Complete stages.
+The integration is triggered by a poll defined in the flow that is going to trigger the application, querying newest SalesForce updates/creations matching a filter criteria and executing the batch job.
+During the Process stage, each SFDC User will be filtered depending on, if it has an existing matching user in the SFDC Org B.
+The last step of the Process stage will group the users and create/update them in SFDC Org B.
+Finally during the On Complete stage the Anypoint Template will log output statistics data into the console.
+</section>
+<section id="considerations">
+This Anypoint template has no particular considerations.
+</section>
+<section id="application_configuration">
++ http.port `9090` 
++ poll.frequencyMillis `60000`
++ poll.startDelayMillis `0`
++ watermark.defaultExpression `YESTERDAY`
+
+***SalesForce Connector configuration for company A***
+
++ sfdc.a.username `bob.dylan@orga`
++ sfdc.a.password `DylanPassword123`
++ sfdc.a.securityToken `avsfwCUl7apQs56Xq2AKi3X`
++ sfdc.a.url `https://login.salesforce.com/services/Soap/u/28.0`
+
+***SalesForce Connector configuration for company B***
+
++ sfdc.b.username `joan.baez@orgb`
++ sfdc.b.password `JoanBaez456`
++ sfdc.b.securityToken `ces56arl7apQs56XTddf34X`
++ sfdc.b.url `https://login.salesforce.com/services/Soap/u/28.0`
+</section>
+<section id="api_calls">
+SalesForce imposes limits on the number of API Calls that can be made. Therefore calculating this amount may be an important factor to consider. Account Broadcast Template calls to the API can be calculated using the formula:
+
+1 + X + X / 200
+
+Being X the number of Accounts to be synchronized on each run.
+
+The division by 200 is because, by default, Users are gathered in groups of 200 for each Upsert API Call in the commit step. Also consider that this calls are executed repeatedly every polling cycle.
+
+For instance if 10 records are fetched from origin instance, then 12 api calls will be made (1 + 10 + 1).
+</section>
+</sections>
+</configuration>

@@ -69,9 +69,6 @@ public class BusinessLogicIT extends AbstractTemplateTestCase {
 
 		// Assert third object was sync to target system 
 		Map<String, Object> payload = invokeRetrieveFlow(retrieveAccountFromBFlow, createdAccountsInA.get(2));
-		System.err.println(createdAccountsInA.size());
-		System.err.println(createdAccountsInA.get(2));
-		System.err.println(payload);
 		assertEquals("The account should have been sync", createdAccountsInA.get(2).get("Name"), payload.get("Name"));
 
 		// Assert fourth object was sync to target system

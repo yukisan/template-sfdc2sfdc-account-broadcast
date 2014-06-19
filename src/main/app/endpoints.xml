@@ -17,8 +17,9 @@ http://www.mulesoft.org/schema/mule/ee/data-mapper http://www.mulesoft.org/schem
     <data-mapper:config name="XML_To_Account" transformationGraphPath="xml_to_account.grf" doc:name="XML_To_Account"/>
 
 	<!-- 	In this file you should declare all your inbound endpoints and from here controll the access to your application -->
-    <flow name="triggerPushFlow" doc:name="triggerPushFlow" >
+    <flow name="triggerPushFlow" doc:name="triggerPushFlow" initialState="started">
         <http:inbound-endpoint exchange-pattern="request-response" host="localhost" port="${http.port}" doc:name="HTTP" contentType="text/xml" />
+        <logger message="triggerPushFlow started " level="INFO" doc:name="Logger"/>
         <data-mapper:transform config-ref="XML_To_Account" doc:name="XML To Account"/>
 
         <batch:execute name="syncAccountsBatch" doc:name="Batch Execute"/>
@@ -33,7 +34,7 @@ Here you should:
 	* Handle any input parameter and set the scope of it so the main logic does not care from where it is called
 Here you should not: 
 	* Run validations against external systems
-	* Choose flow of you application based on input parameters" initialState="stopped">
+	* Choose flow of you application based on input parameters" >
     	<poll doc:name="fireup Account synchronization">
             <fixed-frequency-scheduler frequency="${polling.frequency}" startDelay="${polling.start.delay}" />
             <watermark variable="lastQueryDate" default-expression="${watermark.default.expression}" selector="MAX" selector-expression="#[payload.LastModifiedDate]"/>

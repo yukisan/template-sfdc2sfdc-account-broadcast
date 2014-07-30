@@ -211,7 +211,7 @@ Finally during the On Complete stage the Anypoint Template will logoutput statis
 ## endpoints.xml<a name="endpointsxml"/>
 This is file is conformed by a two Flows.
 
-The first one we'll call it **push** flow. This one contains an HTTP endpoint that will be listening for notifications from the . Each of them will be processed and thus update/create Accounts, and then executing the batch job process.
+The first one we'll call it **push** flow. This one contains an HTTP endpoint that will be listening for notifications from Salesforce . Each of them will be processed and thus update/create Accounts, and then executing the batch job process.
 
 The second one we'll call it **poll** flow. This one contains the Poll endpoint that will periodically query Salesforce for updated/created Accounts that meet the defined criteria in the query, and then executing the batch job process.
 

@@ -5,7 +5,7 @@ xmlns="http://www.mulesoft.org/schema/mule/core"
 xmlns:sfdc="http://www.mulesoft.org/schema/mule/sfdc"
 xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" 
 xmlns:spring="http://www.springframework.org/schema/beans" 
-version="EE-3.5.0" 
+version="EE-3.5.1" 
 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
 xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
@@ -20,10 +20,16 @@ http://www.mulesoft.org/schema/mule/ee/data-mapper http://www.mulesoft.org/schem
     <flow name="triggerPushFlow" doc:name="triggerPushFlow" initialState="started">
         <http:inbound-endpoint exchange-pattern="request-response" host="localhost" port="${http.port}" doc:name="HTTP" contentType="text/xml" />
         <logger message="triggerPushFlow started " level="INFO" doc:name="Logger"/>
-        <data-mapper:transform config-ref="XML_To_Account" doc:name="XML To Account"/>
-
-        <batch:execute name="syncAccountsBatch" doc:name="Batch Execute"/>
-        <set-payload doc:name="set response body" value="&lt;soapenv:Envelope xmlns:soapenv='http://schemas.xmlsoap.org/soap/envelope/' xmlns:out='http://soap.sforce.com/2005/09/outbound'&gt;&lt;soapenv:Header/&gt;&lt;soapenv:Body&gt;&lt;out:notificationsResponse&gt;&lt;out:Ack&gt;true&lt;/out:Ack&gt;&lt;/out:notificationsResponse&gt;&lt;/soapenv:Body&gt;&lt;/soapenv:Envelope&gt;"/>
+        <choice doc:name="Trigger Policy">
+            <when expression="#['push' == '${trigger.policy}']">
+                <data-mapper:transform config-ref="XML_To_Account" doc:name="XML To Account"/>
+                <batch:execute name="syncAccountsBatch" doc:name="Batch Execute"/>
+            </when>
+            <otherwise>
+                <logger message="Trigger policy has been set to POLL. Sikpping this message" level="INFO" doc:name="Logger"/>
+            </otherwise>
+        </choice>
+        <set-payload value="&lt;soapenv:Envelope xmlns:soapenv='http://schemas.xmlsoap.org/soap/envelope/' xmlns:out='http://soap.sforce.com/2005/09/outbound'&gt;&lt;soapenv:Header/&gt;&lt;soapenv:Body&gt;&lt;out:notificationsResponse&gt;&lt;out:Ack&gt;true&lt;/out:Ack&gt;&lt;/out:notificationsResponse&gt;&lt;/soapenv:Body&gt;&lt;/soapenv:Envelope&gt;" doc:name="set response body"/>
         <http:response-builder doc:name="build Http response" contentType="application/xml" status="200">
         </http:response-builder>
     </flow>
@@ -42,7 +48,14 @@ Here you should not:
             </sfdc:query>
         </poll>
         <logger message="retrieved account number: #[payload.size()]" level="INFO" doc:name="log created/updated Accounts"/>
-        <batch:execute name="syncAccountsBatch" doc:name="trigger syncAccountsBatch"/>
+        <choice doc:name="Trigger Policy">
+            <when expression="#['poll' == '${trigger.policy}']">
+                <batch:execute name="syncAccountsBatch" doc:name="trigger syncAccountsBatch"/>
+            </when>
+            <otherwise>
+                <logger message="Trigger policy has been set to PUSH. Sikpping this message" level="INFO" doc:name="Logger"/>
+            </otherwise>
+        </choice>
     </flow>
     
 </mule>

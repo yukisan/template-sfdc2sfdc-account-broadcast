@@ -14,7 +14,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mule.MessageExchangePattern;
 import org.mule.api.MuleEvent;
@@ -37,6 +39,16 @@ public class BusinessLogicIT extends AbstractTemplateTestCase {
 	private BatchTestHelper helper;
 	private List<Map<String, Object>> createdAccountsInA = new ArrayList<Map<String, Object>>();
 
+	@BeforeClass
+	public static void beforeClass() {
+		System.setProperty("trigger.policy", "poll");		
+	}
+
+	@AfterClass
+	public static void shutDown() {
+		System.clearProperty("trigger.policy");
+	}
+	
 	@Before
 	public void setUp() throws Exception {
 		stopFlowSchedulers(POLL_FLOW_NAME);

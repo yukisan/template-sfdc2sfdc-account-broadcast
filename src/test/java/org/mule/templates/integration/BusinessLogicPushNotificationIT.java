@@ -14,7 +14,9 @@ import java.util.Map;
 import junit.framework.Assert;
 
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mule.DefaultMuleMessage;
 import org.mule.MessageExchangePattern;
@@ -39,6 +41,16 @@ public class BusinessLogicPushNotificationIT extends AbstractTemplateTestCase {
 	private BatchTestHelper helper;
 	private Flow triggerPushFlow;
 	private List<String> accountsToDelete = new ArrayList<String>();
+	
+	@BeforeClass
+	public static void beforeClass() {
+		System.setProperty("trigger.policy", "push");		
+	}
+
+	@AfterClass
+	public static void shutDown() {
+		System.clearProperty("trigger.policy");
+	}
 
 	@Before
 	public void setUp() throws Exception {

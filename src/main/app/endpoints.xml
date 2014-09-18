@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:data-mapper="http://www.mulesoft.org/schema/mule/ee/data-mapper" xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:http="http://www.mulesoft.org/schema/mule/http" 
+<mule xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns:data-mapper="http://www.mulesoft.org/schema/mule/ee/data-mapper" xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:http="http://www.mulesoft.org/schema/mule/http" 
 xmlns="http://www.mulesoft.org/schema/mule/core" 
 xmlns:sfdc="http://www.mulesoft.org/schema/mule/sfdc"
 xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" 
@@ -13,49 +13,19 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 http://www.mulesoft.org/schema/mule/sfdc http://www.mulesoft.org/schema/mule/sfdc/current/mule-sfdc.xsd
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
 http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
-http://www.mulesoft.org/schema/mule/ee/data-mapper http://www.mulesoft.org/schema/mule/ee/data-mapper/current/mule-data-mapper.xsd">
-    <data-mapper:config name="XML_To_Account" transformationGraphPath="xml_to_account.grf" doc:name="XML_To_Account"/>
+http://www.mulesoft.org/schema/mule/ee/data-mapper http://www.mulesoft.org/schema/mule/ee/data-mapper/current/mule-data-mapper.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd">
+    <flow name="endpointsFlow1" doc:name="endpointsFlow1" processingStrategy="synchronous">
+        <poll doc:name="fireup Account synchronization">
+            <fixed-frequency-scheduler frequency="${polling.frequency}" startDelay="${polling.start.delay}"/>
+            <watermark variable="lastQueryDate" default-expression="${watermark.default.expression}" selector="MAX" selector-expression="#[payload.LastModifiedDate]"/>
+            <sfdc:query config-ref="SalesforceA" query="dsql:SELECT AccountNumber, Description, Id, Industry, LastModifiedById, LastModifiedDate, Name, NumberOfEmployees, ParentId FROM Account WHERE LastModifiedDate &gt; #[flowVars['lastQueryDate']] AND NumberOfEmployees &gt; 5000 " doc:name="query Accounts with filtering criteria from Salesforce Instance A"/>
+        </poll>
+        <batch:execute name="enqueueLastChangesBatch" doc:name="Batch Execute"/>
+    </flow>
+
 
 	<!-- 	In this file you should declare all your inbound endpoints and from here controll the access to your application -->
-    <flow name="triggerPushFlow" doc:name="triggerPushFlow" initialState="started">
-        <http:inbound-endpoint exchange-pattern="request-response" host="localhost" port="${http.port}" doc:name="HTTP" contentType="text/xml" />
-        <logger message="triggerPushFlow started " level="INFO" doc:name="Logger"/>
-        <choice doc:name="Trigger Policy">
-            <when expression="#['push' == '${trigger.policy}']">
-                <data-mapper:transform config-ref="XML_To_Account" doc:name="XML To Account"/>
-                <batch:execute name="syncAccountsBatch" doc:name="Batch Execute"/>
-            </when>
-            <otherwise>
-                <logger message="Trigger policy has been set to POLL. Sikpping this message" level="INFO" doc:name="Logger"/>
-            </otherwise>
-        </choice>
-        <set-payload value="&lt;soapenv:Envelope xmlns:soapenv='http://schemas.xmlsoap.org/soap/envelope/' xmlns:out='http://soap.sforce.com/2005/09/outbound'&gt;&lt;soapenv:Header/&gt;&lt;soapenv:Body&gt;&lt;out:notificationsResponse&gt;&lt;out:Ack&gt;true&lt;/out:Ack&gt;&lt;/out:notificationsResponse&gt;&lt;/soapenv:Body&gt;&lt;/soapenv:Envelope&gt;" doc:name="set response body"/>
-        <http:response-builder doc:name="build Http response" contentType="application/xml" status="200">
-        </http:response-builder>
-    </flow>
-    
-    <flow name="triggerFlow" processingStrategy="synchronous"   doc:name="triggerFlow" doc:description="This is the simpliest entry point to start the excecution of your Anypoint Template
-Here you should: 
-	* Configure the inbound endpoint, in this case a polling to fetch data from origin system
-	* Handle any input parameter and set the scope of it so the main logic does not care from where it is called
-Here you should not: 
-	* Run validations against external systems
-	* Choose flow of you application based on input parameters" >
-    	<poll doc:name="fireup Account synchronization">
-            <fixed-frequency-scheduler frequency="${polling.frequency}" startDelay="${polling.start.delay}" />
-            <watermark variable="lastQueryDate" default-expression="${watermark.default.expression}" selector="MAX" selector-expression="#[payload.LastModifiedDate]"/>
-             <sfdc:query config-ref="SalesforceA" doc:name="query Accounts with filtering criteria from Salesforce Instance A" query="dsql:SELECT AccountNumber, Description, Id, Industry, LastModifiedById, LastModifiedDate, Name, NumberOfEmployees, ParentId FROM Account WHERE LastModifiedDate &gt; #[flowVars['lastQueryDate']] AND NumberOfEmployees &gt; 5000 AND (Industry = 'Education' OR  Industry = 'Government')">
-            </sfdc:query>
-        </poll>
-        <logger message="retrieved account number: #[payload.size()]" level="INFO" doc:name="log created/updated Accounts"/>
-        <choice doc:name="Trigger Policy">
-            <when expression="#['poll' == '${trigger.policy}']">
-                <batch:execute name="syncAccountsBatch" doc:name="trigger syncAccountsBatch"/>
-            </when>
-            <otherwise>
-                <logger message="Trigger policy has been set to PUSH. Sikpping this message" level="INFO" doc:name="Logger"/>
-            </otherwise>
-        </choice>
-    </flow>
+
     
 </mule>

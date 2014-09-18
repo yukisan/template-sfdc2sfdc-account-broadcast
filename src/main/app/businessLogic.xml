@@ -1,17 +1,47 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
+<mule xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
 	xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
 	xmlns:sfdc="http://www.mulesoft.org/schema/mule/sfdc" xmlns="http://www.mulesoft.org/schema/mule/core"
 	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
-	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.5.0"
+	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.5.1"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:json="http://www.mulesoft.org/schema/mule/json"
 	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/sfdc http://www.mulesoft.org/schema/mule/sfdc/current/mule-sfdc.xsd
 http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
 http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
-http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd">
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd">
+    <batch:job name="enqueueLastChangesBatch">
+        <batch:threading-profile poolExhaustedAction="WAIT"/>
+        <batch:process-records>
+            <batch:step name="foreachAccountEnqueue">
+                <logger message="0000 #[payload]" level="INFO" doc:name="Logger"/>
+                <batch:set-record-variable variableName="routes" value="#[ ['Education': 'A','Energy': 'B','Government': 'B','Ecommerce': 'A'] ]" doc:name="set routes"/>
+                <jms:outbound-endpoint queue="#[recordVars['routes'][payload.Industry]]" connector-ref="Active_MQ" doc:name="enqueue in JMS"/>
+            </batch:step>
+        </batch:process-records>
+        <batch:on-complete>
+            <logger message="1111111 batch completed" level="INFO" doc:name="log batch complete"/>
+        </batch:on-complete>
+    </batch:job>
+    <flow name="processAQueueObjectsFlow" doc:name="processAQueueObjectsFlow">
+        <jms:inbound-endpoint queue="A" connector-ref="Active_MQ" doc:name="JMS"/>
+        <logger message="AAAAAAAAAAAA #[payload]" level="INFO" doc:name="Logger"/>
+        <expression-component doc:name="Expression"><![CDATA[Object obj = payload;
+payload = new ArrayList();
+payload.add(obj);]]></expression-component>
+        <batch:execute name="syncAccountsBatch" doc:name="Batch Execute"/>
+    </flow>
+    <flow name="processBQueueObjectsFlow" doc:name="processBQueueObjectsFlow">
+        <jms:inbound-endpoint queue="B" connector-ref="Active_MQ" doc:name="JMS"/>
+        <logger message="BBBBBBBBB #[payload]" level="INFO" doc:name="Logger"/>
+        <expression-component doc:name="Expression"><![CDATA[Object obj = payload;
+payload = new ArrayList();
+payload.add(obj);]]></expression-component>
+        <batch:execute name="syncAccountsBatch" doc:name="Batch Execute"/>
+    </flow>
 	<batch:job name="syncAccountsBatch">
 		<batch:threading-profile poolExhaustedAction="WAIT" />
 		<batch:process-records>

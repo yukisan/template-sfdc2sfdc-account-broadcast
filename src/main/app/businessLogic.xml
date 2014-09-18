@@ -28,7 +28,7 @@ http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/
     </batch:job>
     <flow name="processAQueueObjectsFlow" doc:name="processAQueueObjectsFlow">
         <jms:inbound-endpoint queue="A" connector-ref="Active_MQ" doc:name="JMS"/>
-        <logger message="AAAAAAAAAAAA #[payload]" level="INFO" doc:name="Logger"/>
+        <logger message="AAAAAAAAAAAAA #[payload]" level="INFO" doc:name="Logger"/>
         <expression-component doc:name="Expression"><![CDATA[Object obj = payload;
 payload = new ArrayList();
 payload.add(obj);]]></expression-component>

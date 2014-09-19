@@ -23,6 +23,22 @@ http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/
         </poll>
         <batch:execute name="enqueueLastChangesBatch" doc:name="Batch Execute"/>
     </flow>
+    <batch:job name="enqueueLastChangesBatch">
+        <batch:threading-profile poolExhaustedAction="WAIT"/>
+        <batch:input>
+            <logger message="0000000000000000000000000000000000000000000 iteration #[payload.size()]" level="INFO" doc:name="Logger"/>
+        </batch:input>
+        <batch:process-records>
+            <batch:step name="foreachAccountEnqueue">
+                <logger message="00000000 #[payload]" level="INFO" doc:name="log record"/>
+                <batch:set-record-variable variableName="routes" value="#[ ['Education': 'A','Energy': 'B','Government': 'B','Ecommerce': 'A'] ]" doc:name="set queue routes"/>
+                <jms:outbound-endpoint queue="#[recordVars['routes'][payload.Industry]]" connector-ref="Active_MQ" doc:name="enqueue in JMS"/>
+            </batch:step>
+        </batch:process-records>
+        <batch:on-complete>
+            <logger message="00000000000000 batch 0 completed" level="INFO" doc:name="Logger"/>
+        </batch:on-complete>
+    </batch:job>
 
 
 	<!-- 	In this file you should declare all your inbound endpoints and from here controll the access to your application -->

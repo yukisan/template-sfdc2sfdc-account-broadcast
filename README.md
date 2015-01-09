@@ -25,7 +25,7 @@ Note that using this template is subject to the conditions of this [License Agre
 Please review the terms of the license before downloading and using this template. In short, you are allowed to use the template for free with Mule ESB Enterprise Edition, CloudHub, or as a trial in Anypoint Studio.
 
 # Use Case <a name="usecase"/>
-As a Salesforce admin I want to synchronize accounts between two Salesfoce orgs.
+As a Salesforce admin I want to synchronize accounts between two Salesforce orgs.
 
 This Anypoint Template should serve as a foundation for setting an online sync of accounts from one Salesforce instance to another. Everytime there is a new account or a change in an already existing one, the integration will poll for changes in Salesforce source instance and it will be responsible for updating the account on the target org.
 
@@ -36,7 +36,7 @@ The batch job is divided in Input, Process and On Complete stages.
 The integration is triggered by a poll defined in the flow that is going to trigger the application, querying newest Salesforce updates/creations matching a filter criteria and executing the batch job.
 During the Process stage, each Salesforce account will be filtered depending on, if it has an existing matching account in the Salesforce Org B.
 The last step of the Process stage will group the accounts and create/update them in Salesforce Org B.
-Finally during the On Complete stage the Anypoint Template will logoutput statistics data into the console.
+Finally during the On Complete stage the Anypoint Template will log output statistics data into the console.
 
 # Considerations <a name="considerations"/>
 
@@ -200,12 +200,12 @@ In the visual editor they can be found on the *Global Element* tab.
 
 
 ## businessLogic.xml<a name="businesslogicxml"/>
-Functional aspect of the Anypoint Template is implemented on this XML, directed by one flow that will poll for Salesforce creations/updates. The severeal message processors constitute four high level actions that fully implement the logic of this Anypoint Template:
+Functional aspect of the Anypoint Template is implemented on this XML, directed by one flow that will poll for Salesforce creations/updates. The several message processors constitute four high level actions that fully implement the logic of this Anypoint Template:
 
 1. During the Input stage the Anypoint Template will go to the Salesforce Org A and query all the existing Accounts that match the filter criteria.
 2. During the Process stage, each Salesforce account will be filtered depending on, if it has an existing matching account in the Salesforce Org B.
 3. The last step of the Process stage will group the accounts and create/update them in Salesforce Org B.
-Finally during the On Complete stage the Anypoint Template will logoutput statistics data into the console.
+4. Finally during the On Complete stage the Anypoint Template will log output statistics data into the console.
 
 
 
@@ -216,7 +216,7 @@ The first one we'll call it **push** flow. This one contains an HTTP endpoint th
 
 The second one we'll call it **poll** flow. This one contains the Poll endpoint that will periodically query Salesforce for updated/created Accounts that meet the defined criteria in the query, and then executing the batch job process.
 
-The property **trigger.policy** is the one in charge of defining from which endpoint the Template will recieve the data. The property can only assume one of two values `push` or `poll` any other value will result in the Template ignoring all messages.
+The property **trigger.policy** is the one in charge of defining from which endpoint the Template will receive the data. The property can only assume one of two values `push` or `poll` any other value will result in the Template ignoring all messages.
 
 
 

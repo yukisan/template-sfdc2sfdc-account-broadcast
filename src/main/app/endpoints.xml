@@ -16,7 +16,8 @@ http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/ba
 http://www.mulesoft.org/schema/mule/ee/data-mapper http://www.mulesoft.org/schema/mule/ee/data-mapper/current/mule-data-mapper.xsd">
     <data-mapper:config name="XML_To_Account" transformationGraphPath="xml_to_account.grf" doc:name="XML_To_Account"/>
 
-	<!-- 	In this file you should declare all your inbound endpoints and from here controll the access to your application -->
+	<!-- 	In this file you should declare all your inbound endpoints in order to control the access to your application -->
+
     <flow name="triggerPushFlow" doc:name="triggerPushFlow" initialState="started">
         <http:inbound-endpoint exchange-pattern="request-response" host="localhost" port="${http.port}" doc:name="HTTP" contentType="text/xml" />
         <logger message="triggerPushFlow started " level="INFO" doc:name="Logger"/>

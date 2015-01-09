@@ -25,7 +25,7 @@ Note that using this template is subject to the conditions of this [License Agre
 Please review the terms of the license before downloading and using this template. In short, you are allowed to use the template for free with Mule ESB Enterprise Edition, CloudHub, or as a trial in Anypoint Studio.
 
 # Use Case <a name="usecase"/>
-As a Salesforce admin I want to syncronize accounts between two Salesfoce orgs.
+As a Salesforce admin I want to synchronize accounts between two Salesfoce orgs.
 
 This Anypoint Template should serve as a foundation for setting an online sync of accounts from one Salesforce instance to another. Everytime there is a new account or a change in an already existing one, the integration will poll for changes in Salesforce source instance and it will be responsible for updating the account on the target org.
 
@@ -84,7 +84,8 @@ column='486'
 
 ### As destination of data
 
-There are no particular considerations for this Anypoint Template regarding Siebel as data destination.
+There are no particular considerations for this Anypoint Template regarding Salesforce as data destination.
+
 
 
 
@@ -127,7 +128,7 @@ Once you have imported you Anypoint Template into Anypoint Studio you need to fo
 
 
 ### Running on Mule ESB stand alone <a name="runonmuleesbstandalone"/>
-Complete all properties in one of the property files, for example in [mule.prod.properties] (../blob/master/src/main/resources/mule.prod.properties) and run your app with the corresponding environment variable to use it. To follow the example, this will be `mule.env=prod`. 
+Complete all properties in one of the property files, for example in [mule.prod.properties] (../master/src/main/resources/mule.prod.properties) and run your app with the corresponding environment variable to use it. To follow the example, this will be `mule.env=prod`. 
 
 
 ## Running on CloudHub <a name="runoncloudhub"/>
@@ -209,7 +210,7 @@ Finally during the On Complete stage the Anypoint Template will logoutput statis
 
 
 ## endpoints.xml<a name="endpointsxml"/>
-This is file is conformed by a two Flows.
+This is file is conformed by two Flows.
 
 The first one we'll call it **push** flow. This one contains an HTTP endpoint that will be listening for notifications from Salesforce . Each of them will be processed and thus update/create Accounts, and then executing the batch job process.
 
@@ -220,7 +221,8 @@ The property **trigger.policy** is the one in charge of defining from which endp
 
 
 ## errorHandling.xml<a name="errorhandlingxml"/>
-Contains a [Catch Exception Strategy](http://www.mulesoft.org/documentation/display/current/Catch+Exception+Strategy) that is only Logging the exception thrown (If so). As you imagine, this is the right place to handle how your integration will react depending on the different exceptions.
+This is the right place to handle how your integration will react depending on the different exceptions. 
+This file holds a [Choice Exception Strategy](http://www.mulesoft.org/documentation/display/current/Choice+Exception+Strategy) that is referenced by the main flow in the business logic.
 
 
 

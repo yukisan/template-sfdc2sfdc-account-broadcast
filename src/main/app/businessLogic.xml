@@ -4,7 +4,7 @@
 	xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
 	xmlns:sfdc="http://www.mulesoft.org/schema/mule/sfdc" xmlns="http://www.mulesoft.org/schema/mule/core"
 	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
-	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.6.0"
+	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.7.0"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:json="http://www.mulesoft.org/schema/mule/json"
 	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/sfdc http://www.mulesoft.org/schema/mule/sfdc/current/mule-sfdc.xsd
 http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
@@ -25,7 +25,7 @@ http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/ba
 				</enricher>
 			</batch:step>
 			<batch:step name="foreachAccountInAUpsertAccountInBStep">
-				<expression-component doc:name="set ID for upsert"><![CDATA[if (recordVars['accountInB'] instanceof NullPayload) {
+				<expression-component doc:name="set ID for upsert"><![CDATA[if (recordVars['accountInB'] == null) {
 	// Remove ID as it is an insert
 	payload.remove('Id')
 } else {
@@ -50,7 +50,7 @@ payload.put('NumberOfEmployees', Integer.parseInt(payload['NumberOfEmployees']) 
 				message="Migration process has finished: #[payload]" />
 		</batch:on-complete>
 	</batch:job>
-    <flow name="commitAccountsFlow" doc:name="commitAccountsFlow">
+    <flow name="commitAccountsFlow" >
         <logger message="Accounts to update/create: #[payload]" level="INFO" doc:name="log Accounts to update/create"/>
         <sfdc:upsert config-ref="SalesforceB" externalIdFieldName="Id" type="Account" doc:name="upsert Accounts in Salesforce Instance B">
             <sfdc:objects ref="#[payload]"/>

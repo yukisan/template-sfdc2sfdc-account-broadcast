@@ -35,7 +35,7 @@
 					</inclusions>
 				</configuration>
 			</plugin>
-		</plugins>
+        </plugins>
 	</build>
 
 	<dependencies>		
@@ -51,7 +51,6 @@
             <scope>provided</scope>
         </dependency>
     </dependencies>
-
 	<repositories>
 		<repository>
 			<id>mulesoft-releases</id>

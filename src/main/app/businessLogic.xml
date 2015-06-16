@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
+<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
 	xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
 	xmlns:sfdc="http://www.mulesoft.org/schema/mule/sfdc" xmlns="http://www.mulesoft.org/schema/mule/core"
 	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
@@ -11,35 +11,42 @@ http://www.springframework.org/schema/beans http://www.springframework.org/schem
 http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
-http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd">
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd">
 	<batch:job name="syncAccountsBatch">
 		<batch:threading-profile poolExhaustedAction="WAIT" />
 		<batch:process-records>
 			<batch:step name="foreachAccountInAGetAccountInBStep">
                 <logger message="Current account: #[payload]" level="INFO" doc:name="Logger"/>
-				<enricher source="#[payload]" target="#[recordVars['accountInB']]"
-					doc:name="store result in record var 'accountInB'">
+				<enricher source="#[payload == null ? null : payload.Id]" target="#[payload.Id]"
+					doc:name="set Id from matching account">
 					<sfdc:query-single config-ref="SalesforceB"
 						query="SELECT Id FROM Account WHERE Name = '#[payload['Name']]'"
 						doc:name="query Account in Salesforce Instance B" />
 				</enricher>
 			</batch:step>
 			<batch:step name="foreachAccountInAUpsertAccountInBStep">
-				<expression-component doc:name="set ID for upsert"><![CDATA[if (recordVars['accountInB'] == null) {
-	// Remove ID as it is an insert
-	payload.remove('Id')
-} else {
-	// Add target system ID as it is an update
-    payload.put('Id', recordVars['accountInB']['Id'])
-}]]></expression-component>
-				<expression-component
-					doc:name="remove unnecessary fields and map field types"><![CDATA[payload.remove('LastModifiedDate');
-payload.remove('LastModifiedById');
 
-// TODO - This is necessary due to: https://www.mulesoft.org/jira/browse/CLDCONNECT-1248
-payload.put('NumberOfEmployees', Integer.parseInt(payload['NumberOfEmployees']) );]]></expression-component>
 				<batch:commit size="200" doc:name="Batch Commit">
-                    <flow-ref name="commitAccountsFlow" doc:name="Flow Reference"/>
+                    <dw:transform-message doc:name="map Salesforce Accounts">
+                        <dw:set-payload><![CDATA[%dw 1.0
+%input payload application/java
+%output application/java
+---
+payload map {
+	AccountNumber: $.AccountNumber,
+	Description : $.Description,
+	Id: $.Id,
+	Name: $.Name,
+	NumberOfEmployees : $.NumberOfEmployees as :number,
+	Industry: $.Industry
+}]]></dw:set-payload>
+                    </dw:transform-message>
+                    <sfdc:upsert config-ref="SalesforceB" externalIdFieldName="Id" type="Account" doc:name="upsert Accounts in Salesforce Instance B">
+                        <sfdc:objects ref="#[payload]"/>
+                    </sfdc:upsert>
+                    <logger message="Upsert result: #[payload]" level="INFO" doc:name="Logger"/>
+
 				</batch:commit>
 			</batch:step>
 		</batch:process-records>
@@ -50,12 +57,6 @@ payload.put('NumberOfEmployees', Integer.parseInt(payload['NumberOfEmployees']) 
 				message="Migration process has finished: #[payload]" />
 		</batch:on-complete>
 	</batch:job>
-    <flow name="commitAccountsFlow" >
-        <logger message="Accounts to update/create: #[payload]" level="INFO" doc:name="log Accounts to update/create"/>
-        <sfdc:upsert config-ref="SalesforceB" externalIdFieldName="Id" type="Account" doc:name="upsert Accounts in Salesforce Instance B">
-            <sfdc:objects ref="#[payload]"/>
-        </sfdc:upsert>
-        <logger message="Upsert result: #[payload]" level="ERROR" doc:name="log Result"/>
-    </flow>
+
 
 </mule>

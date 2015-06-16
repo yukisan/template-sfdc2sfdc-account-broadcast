@@ -25,7 +25,7 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
         <logger message="triggerPushFlow started " level="INFO" doc:name="Logger"/>
         <choice doc:name="Trigger Policy">
             <when expression="#['push' == '${trigger.policy}']">
-                <dw:transform-message doc:name="Transform Message">
+                <dw:transform-message doc:name="XML to Account">
                     <dw:set-payload><![CDATA[%dw 1.0
 %input payload application/xml
 %output application/java
@@ -34,24 +34,12 @@ payload.Envelope.Body.notifications.*Notification map
 {
 Id: $.Id,
 Description: $.sObject.Description,
-ShippingStreet: $.sObject.ShippingStreet,
-Site: $.sObject.Site,
-Type: $.sObject.Type,
-Website: $.sObject.Website,
 Industry: $.sObject.Industry,
 Name: $.sObject.Name,
-NumberOfEmployees: $.sObject.NumberOfEmployees,
-ShippingCity: $.sObject.ShippingCity,
-ShippingCountry: $.sObject.ShippingCountry,
-ShippingPostalCode: $.sObject.ShippingPostalCode,
-ShippingState: $.sObject.ShippingState,
-BillingCity: $.sObject.BillingCity,
-BillingCountry: $.sObject.BillingCountry,
-BillingPostalCode: $.sObject.BillingPostalCode,
-BillingState: $.sObject.BillingState,
-BillingStreet: $.sObject.BillingStreet,
+NumberOfEmployees: $.sObject.NumberOfEmployees as :number,
 LastModifiedDate: $.sObject.LastModifiedDate
-}]]></dw:set-payload>
+}
+]]></dw:set-payload>
                 </dw:transform-message>
 
                 <batch:execute name="syncAccountsBatch" doc:name="Batch Execute"/>
@@ -74,7 +62,7 @@ Here you should not:
     	<poll doc:name="fireup Account synchronization">
             <fixed-frequency-scheduler frequency="${polling.frequency}" startDelay="${polling.start.delay}" />
             <watermark variable="lastQueryDate" default-expression="${watermark.default.expression}" selector="MAX" selector-expression="#[payload.LastModifiedDate]"/>
-             <sfdc:query config-ref="SalesforceA" doc:name="query Accounts with filtering criteria from Salesforce Instance A" query="dsql:SELECT AccountNumber, Description, Id, Industry, LastModifiedById, LastModifiedDate, Name, NumberOfEmployees, ParentId FROM Account WHERE LastModifiedDate &gt; #[flowVars['lastQueryDate']] AND NumberOfEmployees &gt; 5000 AND (Industry = 'Education' OR  Industry = 'Government')">
+             <sfdc:query config-ref="SalesforceA" doc:name="query Accounts with filtering criteria from Salesforce Instance A" query="dsql:SELECT AccountNumber, Description, Id, Industry, LastModifiedDate, Name, NumberOfEmployees, ParentId FROM Account WHERE LastModifiedDate &gt; #[flowVars['lastQueryDate']] AND NumberOfEmployees &gt; 5000 AND (Industry = 'Education' OR  Industry = 'Government')">
             </sfdc:query>
         </poll>
         <logger message="retrieved account number: #[payload.size()]" level="INFO" doc:name="log created/updated Accounts"/>

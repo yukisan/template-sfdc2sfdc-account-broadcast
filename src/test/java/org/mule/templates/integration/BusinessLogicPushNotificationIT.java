@@ -6,11 +6,14 @@
 
 package org.mule.templates.integration;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.activation.DataHandler;
 
+import org.glassfish.grizzly.utils.BufferInputStream;
 import junit.framework.Assert;
 
 import org.junit.After;
@@ -20,10 +23,13 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mule.DefaultMuleMessage;
 import org.mule.MessageExchangePattern;
+import org.mule.api.MuleContext;
 import org.mule.api.MuleEvent;
 import org.mule.api.MuleException;
 import org.mule.api.MuleMessage;
+import org.mule.api.transformer.DataType;
 import org.mule.construct.Flow;
+import org.mule.transformer.types.DataTypeFactory;
 import org.mule.context.notification.NotificationException;
 import org.mule.processor.chain.SubflowInterceptingChainLifecycleWrapper;
 
@@ -70,8 +76,8 @@ public class BusinessLogicPushNotificationIT extends AbstractTemplateTestCase {
 	public void testMainFlow() throws Exception {
 		// Execution
 		String accountName = buildUniqueName();
-		MuleMessage message = new DefaultMuleMessage(buildRequest(accountName), muleContext);
-		MuleEvent testEvent = getTestEvent(message, MessageExchangePattern.REQUEST_RESPONSE);
+		final MuleEvent testEvent = getTestEvent(null, triggerPushFlow);
+		testEvent.getMessage().setPayload(buildRequest(accountName), DataTypeFactory.create(InputStream.class, "application/xml"));
 		testEvent.setFlowVariable("sourceSystem", "A");
 		triggerPushFlow.process(testEvent);
 		
@@ -83,9 +89,9 @@ public class BusinessLogicPushNotificationIT extends AbstractTemplateTestCase {
 		
 		SubflowInterceptingChainLifecycleWrapper retrieveAccountFlow = getSubFlow("retrieveAccountFlow");
 		retrieveAccountFlow.initialise();
-		message = new DefaultMuleMessage(account, muleContext);
-		testEvent = getTestEvent(message, MessageExchangePattern.REQUEST_RESPONSE);
-		Map<String, String> accountInB = (Map<String, String>) retrieveAccountFlow.process(testEvent).getMessage().getPayload();
+		MuleMessage message = new DefaultMuleMessage(account, muleContext);
+		final MuleEvent retrieveEvent = getTestEvent(message, MessageExchangePattern.REQUEST_RESPONSE);
+		Map<String, String> accountInB = (Map<String, String>) retrieveAccountFlow.process(retrieveEvent).getMessage().getPayload();
 		
 		// Assertions
 		Assert.assertNotNull(accountInB);

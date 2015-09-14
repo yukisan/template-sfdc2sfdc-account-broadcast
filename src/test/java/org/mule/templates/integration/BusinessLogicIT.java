@@ -78,6 +78,8 @@ public class BusinessLogicIT extends AbstractTemplateTestCase {
 		// Wait for the batch job executed by the poll flow to finish
 		helper.awaitJobTermination(TIMEOUT_SEC * 1000, 500);
 		helper.assertJobWasSuccessful();
+		
+		Thread.sleep(3000);
 
 		// Assert first object was not sync
 		assertEquals("The account should not have been sync", null, invokeRetrieveFlow(retrieveAccountFromBFlow, createdAccountsInA.get(0)));

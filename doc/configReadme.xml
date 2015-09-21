@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version='1.0' encoding='utf-8'?>
 <configuration>
 	<placeholders>
 		<placeholder id="template_name">Salesforce to Salesforce Account Broadcast</placeholder>
@@ -19,31 +19,31 @@ The last step of the Process stage will group the accounts and create/update the
 Finally during the On Complete stage the Anypoint Template will log output statistics data into the console.
 		</section>
 		<section id="considerations">
-<![CDATA[
+
 To make this Anypoint Template run, there are certain preconditions that must be considered. All of them deal with the preparations in both source and destination systems, that must be made in order for all to run smoothly. **Failling to do so could lead to unexpected behavior of the template.**
-]]>
+
 		</section>
 		<section id="run_it">
-<![CDATA[
+
 See below.
-]]>
+
 		</section>
 		<section id="default_running_on_premise">
-<![CDATA[
+
 In this section we detail the way you have to run you Anypoint Temple on you computer.
 
 Once your app is all set and started, there is no need to do anything else. The application will poll Account to know if there are any newly created or updated objects and synchronice them.
-]]>
+
 		</section>
 		<section id="default_running_on_cloudhub">
-<![CDATA[
-While [creating your application on CloudHub](http://www.mulesoft.org/documentation/display/current/Hello+World+on+CloudHub) (Or you can do it later as a next step), you need to go to Deployment > Advanced to set all environment variables detailed in **Properties to be configured** as well as the **mule.env**. 
+
+While [creating your application on CloudHub](http://www.mulesoft.org/documentation/display/current/Hello+World+on+CloudHub) (Or you can do it later as a next step), you need to go to Deployment &gt; Advanced to set all environment variables detailed in **Properties to be configured** as well as the **mule.env**. 
 
 Once your app is all set and started, there is no need to do anything else. Every time an account is created or modified, it will be automatically synchronised to Salesforce Org B as long as it has an Email.
-]]>
+
 		</section>
 		<section id="application_configuration">
-		<![CDATA[
+		
 **Application configuration**
 
 + http.port `9090` 
@@ -57,7 +57,7 @@ Once your app is all set and started, there is no need to do anything else. Ever
 **Salesforce Connector configuration for company A**
 
 + sfdc.a.username `bob.dylan@orga`
-+ sfdc.a.password `DylanPassword123`
++ sfdc.a.password `DylanPassword543`
 + sfdc.a.securityToken `avsfwCUl7apQs56Xq2AKi3X`
 + sfdc.a.url `https://login.salesforce.com/services/Soap/u/32.0`
 
@@ -67,10 +67,10 @@ Once your app is all set and started, there is no need to do anything else. Ever
 + sfdc.b.password `JoanBaez456`
 + sfdc.b.securityToken `ces56arl7apQs56XTddf34X`
 + sfdc.b.url `https://login.salesforce.com/services/Soap/u/32.0`
-]]>
+
 		</section>
 		<section id="api_calls">
-		<![CDATA[
+		
 Salesforce imposes limits on the number of API Calls that can be made. Therefore calculating this amount may be an important factor to consider. The Anypoint Template calls to the API can be calculated using the formula:
 
 ***1 + X + X / 200***
@@ -80,20 +80,20 @@ Being ***X*** the number of Accounts to be synchronized on each run.
 The division by ***200*** is because, by default, Accounts are gathered in groups of 200 for each Upsert API Call in the commit step. Also consider that this calls are executed repeatedly every polling cycle.	
 
 For instance if 10 records are fetched from origin instance, then 12 api calls will be made (1 + 10 + 1).
-]]>
+
 		</section>
 		<section id="default_business_logic_xml">
-		<![CDATA[
+		
 Functional aspect of the Anypoint Template is implemented on this XML, directed by one flow that will poll for Salesforce creations/updates. The several message processors constitute four high level actions that fully implement the logic of this Anypoint Template:
 
 1. During the Input stage the Anypoint Template will go to the Salesforce Org A and query all the existing Accounts that match the filter criteria.
 2. During the Process stage, each Salesforce account will be filtered depending on, if it has an existing matching account in the Salesforce Org B.
 3. The last step of the Process stage will group the accounts and create/update them in Salesforce Org B.
 4. Finally during the On Complete stage the Anypoint Template will log output statistics data into the console.
-]]>
+
 		</section>
 		<section id="default_endpoints_xml">
-		<![CDATA[
+		
 This is file is conformed by two Flows.
 
 The first one we'll call it **push** flow. This one contains an HTTP endpoint that will be listening for notifications from Salesforce . Each of them will be processed and thus update/create Accounts, and then executing the batch job process.
@@ -101,7 +101,7 @@ The first one we'll call it **push** flow. This one contains an HTTP endpoint th
 The second one we'll call it **poll** flow. This one contains the Poll endpoint that will periodically query Salesforce for updated/created Accounts that meet the defined criteria in the query, and then executing the batch job process.
 
 The property **trigger.policy** is the one in charge of defining from which endpoint the Template will receive the data. The property can only assume one of two values `push` or `poll` any other value will result in the Template ignoring all messages.
-]]>
+
 		</section>
 	</sections>
 </configuration>

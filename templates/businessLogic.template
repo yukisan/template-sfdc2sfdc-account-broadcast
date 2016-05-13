@@ -5,7 +5,7 @@
 ##
 #set( $batch_name = $fragment_element_label_business_logic_broadcast_account_batch )
 #set( $lookup_entities = $fragment_container_batchstep_lookup_account_sfdc )
-#set( $upsert_entities = $fragment_container_batchstep_sfdc_upsert_accounts_in_b_step )
+#set( $create_upsert_entities = $fragment_container_batchstep_sfdc_upsert_accounts_in_b_step )
 #set( $on_complete = $fragment_processors_processorgroup_broadcast_on_complete )
 #set( $batch_job = "#evaluate( $fragment_container_batchjob_broadcast )" )
 ##
